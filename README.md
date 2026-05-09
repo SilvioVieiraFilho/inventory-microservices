@@ -1,235 +1,258 @@
-# 🚀 Spring Boot Product API
+# 🚀 Inventory Microservices System
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=180&section=header&text=Product%20API%20System&fontSize=28&fontColor=ffffff" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=220&section=header&text=Inventory%20Microservices%20System&fontSize=36&fontColor=ffffff&animation=fadeIn" />
 </p>
 
-## 📌 Sobre o Projeto
+<p align="center">
 
-API REST desenvolvida com **Java + Spring Boot**, com foco em boas práticas de arquitetura moderna, segurança com JWT, testes automatizados e organização por domínio (Feature-Based Architecture).
+<img src="https://img.shields.io/badge/Java-21-red?style=for-the-badge&logo=openjdk" />
+<img src="https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot" />
+<img src="https://img.shields.io/badge/Microservices-Architecture-blueviolet?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Spring_Security-JWT-success?style=for-the-badge" />
+<img src="https://img.shields.io/badge/OpenFeign-REST_Communication-blue?style=for-the-badge" />
 
-O sistema simula uma aplicação real de gestão de produtos com autenticação de usuários, regras de negócio complexas e histórico de alterações.
-
----
-
-## 🧠 Objetivos
-
-- Criar uma API escalável e organizada por domínio
-- Aplicar arquitetura moderna (Feature-Based Architecture)
-- Implementar autenticação com JWT
-- Aplicar testes unitários com JUnit e Mockito
-- Trabalhar com regras de negócio reais
-- Garantir código limpo e de fácil manutenção
+</p>
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+# 📌 About the Project
 
-O projeto foi estruturado em **Feature-Based Architecture**, separando cada domínio de forma independente.
+Backend system based on **Microservices Architecture** using **Java + Spring Boot**.
 
-com.produtoapi
-├── produto
-├── usuario
-├── security
-├── historicoproduto
-├── exception
-├── configuration
-└── response
+This project was designed to simulate a real-world backend environment, applying modern software engineering practices focused on:
 
----
-
-## 🧩 Estrutura por Domínio
-
-### 🟦 Produto
-
-produto
-├── controller
-├── service
-├── domain
-├── dto
-├── repository
-├── mapper
-├── enums
-├── specification
-└── historico
-
+- Scalable Architecture
+- Service Communication
+- JWT Authentication
+- Domain Isolation
+- Clean Code
+- SOLID Principles
+- Automated Testing
+- Real Business Rules
 
 ---
 
-### 🟩 Usuário
+# 🏗️ System Architecture
 
-usuario
-├── controller
-├── service
-├── domain
-├── dto
-├── repository
-├── mapper
-└── enums
-
-
----
-
-### 🟪 Security (JWT)
-
-security
-├── config
-├── filter
-├── service
-└── controller
-
-
-
----
-
-## 🔐 Autenticação
-
-A API utiliza **JWT (JSON Web Token)** para autenticação stateless.
-
-### Fluxo:
-
-1. Usuário realiza login
-2. API valida credenciais
-3. Token JWT é gerado
-4. Token enviado no header:
-
-Authorization: Bearer <token>
-
-
----
-
-## 🛡️ Segurança
-
-- Autenticação JWT
-- Filtro de requisições protegidas
-- Controle de acesso por roles (USER / ADMIN)
-- Validação de token em todas as rotas protegidas
-
----
-
-## 📦 Funcionalidades
-
-### 🟦 Produto
-- Criar produto
-- Atualizar produto
-- Buscar por ID
-- Listar produtos
-- Filtros dinâmicos (Specification)
-- Merge de produtos (regra de negócio)
-- Histórico de alterações
-
----
-
-### 🟩 Usuário
-- Cadastro de usuário
-- Autenticação
-- Controle de status:
-    - ATIVO
-    - DESATIVADO
-    - BLOQUEADO
-- Validação de login
-
----
-
-## 🔍 Regras de Negócio
-
-- Produtos duplicados (mesmo nome, preço e status) somam quantidade automaticamente
-- Produtos com status **ESGOTADO** não podem receber quantidade
-- Usuários com status **DESATIVADO ou BLOQUEADO** não podem autenticar
-- Login exige e-mail e senha válidos
-- Usuário inativo não pode acessar o sistema
-
----
-
-## 🧪 Testes
-
-- JUnit 5 para testes unitários
-- Mockito para mocks
-- Cobertura de testes com JaCoCo
-- Testes de service, domain e security
-
----
-
-# 📊 Tratamento de Erros
-
-```json
-{
-  "timestamp": "2026-05-06T10:30:00",
-  "status": 400,
-  "error": "BusinessException",
-  "message": "Usuário inativo ou bloqueado"
-}
+```txt
+                 ┌────────────────────┐
+                 │       Client       │
+                 └─────────┬──────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │    produto-service     │
+              └─────────┬──────────────┘
+                        │ REST/OpenFeign
+                        ▼
+              ┌────────────────────────┐
+              │   historico-service    │
+              └────────────────────────┘
 ```
-___
-## 🛠️ Tecnologias utilizadas
-- Java 17+
-- Spring Boot
+
+---
+
+# 🧩 Microservices
+
+## 📦 produto-service
+
+Responsible for product management and business rules.
+
+### Features
+
+- Product registration
+- Product update
+- Dynamic filtering
+- Product merge logic
+- Inventory control
+- JWT Security
+- Integration with historico-service
+
+---
+
+## 🕘 historico-service
+
+Responsible for audit logs and history tracking.
+
+### Features
+
+- Product event history
+- Change tracking
+- Audit logging
+- Event persistence
+- REST event consumption
+
+---
+
+# 🔗 Service Communication
+
+Microservices communicate through:
+
+- REST API
+- OpenFeign Client
+
+Flow:
+
+```txt
+produto-service
+        │
+        ├── sends events
+        ▼
+historico-service
+```
+
+---
+
+# 🔐 Security
+
+Implemented using:
+
 - Spring Security
-- Spring Data JPA
-- Hibernate
-- JWT
-- MapStruct
-- JUnit 5
-- Mockito
-- Maven
-- H2 Database
+- JWT Authentication
+- Stateless Authentication
+- Authorization Filters
+- Protected Routes
+- Role-based Access Control
 
-___
+---
 
-## 📁 Estrutura do projeto
+# 🧠 Business Rules
 
-src/main/java
-└── com.produtoapi
-├── produto
-├── usuario
-├── security
-├── historicoproduto
-├── exception
-├── configuration
-└── response
+### 📦 Product Rules
 
-## 🎯 Arquitetura e decisões técnicas
-- Separação por domínio (Feature-Based Architecture)
-- Camada Domain para regras de negócio
-- DTOs para desacoplamento da entidade 
-- Mappers com MapStruct
-- Autenticação stateless com JWT
-- Histórico de produtos para auditoria
-- Filtros dinâmicos com Specification
-- Código organizado seguindo Clean Code e SOLID
-___
- 
-## 📈 Evolução do projeto
+- Duplicate products are merged automatically
+- SOLD_OUT products cannot receive stock
+- Product updates generate history events
+- Inventory operations are audited
 
-Este projeto evoluiu para um nível próximo de aplicações reais de mercado:
+---
 
+### 👤 User Rules
 
-✔️ Arquitetura escalável  
-✔️ Segurança com JWT  
-✔️ Domínios isolados  
-✔️ Regras de negócio reais  
-✔️ Testes automatizados  
-✔️ Código organizado e limpo  
-✔️ Pronto para evolução para microsserviços
-___
+- BLOCKED users cannot authenticate
+- DISABLED users cannot access the system
+- Login requires valid credentials
 
+---
 
-## ▶️ Como executar o projeto
+# 🛠️ Technologies
 
-### 1. Clonar o repositório
+| Technology      | Purpose                        |
+| --------------- | ------------------------------ |
+| Java 21         | Main language                  |
+| Spring Boot     | Backend framework              |
+| Spring Security | Authentication & Authorization |
+| JWT             | Stateless authentication       |
+| OpenFeign       | Service communication          |
+| Spring Data JPA | Persistence                    |
+| Hibernate       | ORM                            |
+| H2 Database     | In-memory database             |
+| MapStruct       | DTO Mapping                    |
+| JUnit 5         | Unit testing                   |
+| Mockito         | Mocking                        |
+| Maven           | Dependency management          |
+
+---
+
+# 📂 Project Structure
+
+```txt
+inventory-microservices/
+│
+├── produto-service/
+│
+├── historico-service/
+│
+├── docs/
+│   ├── architecture.png
+│   ├── uml.png
+│   └── der.png
+│
+└── README.md
+```
+
+---
+
+# 🧪 Testing
+
+The project includes:
+
+- Unit Tests
+- Domain Tests
+- Service Layer Tests
+- Security Tests
+- Mockito-based mocks
+- JaCoCo coverage
+
+---
+
+# 📘 API Documentation
+
+After starting the services:
+
+## produto-service
+
+```txt
+http://localhost:8080/swagger-ui.html
+```
+
+## historico-service
+
+```txt
+http://localhost:8081/swagger-ui.html
+```
+
+---
+
+# ▶️ Running the Project
+
+## Clone repository
 
 ```bash
-git clone https://github.com/SEU-USUARIO/springboot-product-api.git
+git clone YOUR_REPOSITORY
+```
 
-cd springboot-product-api
+---
 
+## Run produto-service
+
+```bash
+cd produto-service
 ./mvnw spring-boot:run
 ```
-___
 
+---
 
+## Run historico-service
 
-👨‍💻 **Autor**  
-Silvio Rodrigues Vieira Filho  
+```bash
+cd historico-service
+./mvnw spring-boot:run
+```
 
-📌 Projeto pessoal focado em evolução como desenvolvedor backend Java
+---
+
+# 📈 Technical Highlights
+
+✔️ Microservices Architecture  
+✔️ REST Communication  
+✔️ OpenFeign Integration  
+✔️ JWT Authentication  
+✔️ Spring Security  
+✔️ Domain-Driven Structure  
+✔️ Clean Code  
+✔️ SOLID Principles  
+✔️ Automated Tests  
+✔️ Scalable Backend Design  
+✔️ Real Business Rules
+
+---
+
+# 👨‍💻 Author
+
+**Silvio Rodrigues Vieira Filho**
+
+Backend Developer focused on Java & Spring Boot ecosystem.
+
+Project created for backend architecture studies and professional portfolio.
