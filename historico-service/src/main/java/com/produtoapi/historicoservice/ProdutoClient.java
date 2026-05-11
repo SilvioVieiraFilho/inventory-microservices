@@ -1,7 +1,5 @@
 package com.produtoapi.historicoservice;
 
-import com.produtoapi.historicoservice.contoller.ApiResponse;
-import com.produtoapi.historicoservice.dto.HistoricoProdutoResponseDTO;
 import com.produtoapi.historicoservice.dto.ProdutoDTO;
 
 import org.springframework.cloud.openfeign.FeignClient;

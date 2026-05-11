@@ -3,45 +3,16 @@ package com.produtoapi.historicoservice.mapper;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoRequestDTO;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoResponseDTO;
 import com.produtoapi.historicoservice.entity.HistoricoProduto;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
-@Component
-public class HistoricoProdutoMapper {
+import java.util.List;
 
-//    public HistoricoProduto toEntity(HistoricoProdutoRequestDTO dto) {
-//
-//        return HistoricoProduto.builder()
-//                .produtoId(dto.getProdutoId())
-//                .quantidadeAnterior(dto.getQuantidadeAnterior())
-//                .quantidadeNova(dto.getQuantidadeNova())
-//                .diferenca(dto.getDiferenca())
-//                .build();
-//    }
+@Mapper(componentModel  = "spring")
 
-    // 🔥 aqui é o "toResponse" correto
-    public HistoricoProdutoResponseDTO toResponse(HistoricoProduto entity) {
+public interface HistoricoProdutoMapper {
 
-        return HistoricoProdutoResponseDTO.builder()
-                .id(entity.getId())
-                .produtoId(entity.getProdutoId())
-                .nomeProduto(entity.getNomeProduto())
-                .quantidadeAnterior(entity.getQuantidadeAnterior())
-                .quantidadeNova(entity.getQuantidadeNova())
-                .diferenca(entity.getDiferenca())
-                .dataRegistro(entity.getDataRegistro())
-                .build();
-    }
+    HistoricoProduto toEntity(HistoricoProdutoRequestDTO dto);
 
-    public HistoricoProdutoResponseDTO toResponseDTO(HistoricoProduto entity) {
+    HistoricoProdutoResponseDTO toDTO(HistoricoProduto historicoProduto);
 
-        return HistoricoProdutoResponseDTO.builder()
-                .id(entity.getId())
-                .produtoId(entity.getProdutoId())
-                .nomeProduto(entity.getNomeProduto())
-                .quantidadeAnterior(entity.getQuantidadeAnterior())
-                .quantidadeNova(entity.getQuantidadeNova())
-                .diferenca(entity.getDiferenca())
-                .dataRegistro(entity.getDataRegistro())
-                .build();
-    }
 }

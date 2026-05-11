@@ -1,42 +1,65 @@
 package com.produtoapi.historicoservice.service;
 
-import com.produtoapi.historicoservice.ProdutoClient;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoRequestDTO;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoResponseDTO;
-import com.produtoapi.historicoservice.dto.ProdutoDTO;
 import com.produtoapi.historicoservice.entity.HistoricoProduto;
+import com.produtoapi.historicoservice.exception.HistoricoNotFoundException;
 import com.produtoapi.historicoservice.mapper.HistoricoProdutoMapper;
 import com.produtoapi.historicoservice.repository.HistoricoProdutoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class HistoricoProdutoService {
 
-    private final HistoricoProdutoRepository repository;
     private final HistoricoProdutoMapper mapper;
-    private final ProdutoClient produtoClient;
-
-    public HistoricoProduto salvar(HistoricoProdutoRequestDTO dto) {
+    private final HistoricoProdutoRepository repository;
+    public HistoricoProdutoResponseDTO salvar(HistoricoProdutoRequestDTO dto) {
 
         if (dto.getTipoEvento() == null) {
             throw new RuntimeException("TipoEvento não pode ser nulo");
         }
 
-        HistoricoProduto historico = new HistoricoProduto();
+        if (dto.getQuantidadeAnterior() == null ||
+                dto.getQuantidadeNova() == null) {
 
-        historico.setProdutoId(dto.getProdutoId());
-        historico.setNomeProduto(dto.getNomeProduto());
-        historico.setQuantidadeAnterior(dto.getQuantidadeAnterior());
-        historico.setQuantidadeNova(dto.getQuantidadeNova());
-        historico.setDiferenca(dto.getDiferenca());
-        historico.setTipoEvento(dto.getTipoEvento());
+            throw new RuntimeException("Quantidades não podem ser nulas");
+        }
+
+        HistoricoProduto historico = mapper.toEntity(dto);
+
+        historico.setDiferenca(
+                dto.getQuantidadeNova() - dto.getQuantidadeAnterior()
+        );
+
         historico.setDataRegistro(LocalDateTime.now());
 
-        return repository.save(historico);
+        HistoricoProduto historicoSalvo = repository.save(historico);
+
+        //return mapper.toDTO(historicoSalvo);
+
+        HistoricoProdutoResponseDTO response = new HistoricoProdutoResponseDTO();
+
+        response.setId(historicoSalvo.getId());
+        response.setNomeProduto(historicoSalvo.getNomeProduto());
+
+        return response;
+    }
+    public  HistoricoProdutoResponseDTO listarPorid (Long id ){
+
+
+        return mapper.toDTO(buscarOuFalhar(id));
+    }
+
+
+    private HistoricoProduto buscarOuFalhar (Long id){
+        return repository.findById(id)
+                .orElseThrow(() -> new  HistoricoNotFoundException(id));
     }
 
 //    public List<HistoricoProdutoResponseDTO>
@@ -49,22 +72,22 @@ public class HistoricoProdutoService {
 //
 //    }
 //
-//
-//    public List<HistoricoProdutoResponseDTO>
-//    buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim){
-//
-//
-//    }
-//
-//
+
+    public List<HistoricoProdutoResponseDTO> buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
+
+       List<HistoricoProdutoResponseDTO> listaInicio = repository.findByDataRegistroBetween(inicio,fim).stream().map(historico -> mapper.toDTO(historico)).collect(Collectors.toList());
+
+       return listaInicio;
+     }
+
+}
+
+
 //    buscarPorEvento(TipoEvento evento){
 //
 //
 //
 //    }
-
-}
-
 
 
 

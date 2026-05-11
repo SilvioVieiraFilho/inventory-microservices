@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProdutoDTO {
-
+     private Long id;
     @JsonProperty("produto_id")
     private Long produtoId;
 
