@@ -1,5 +1,8 @@
-package com.produtoapi.historicoproduto.domain;
+package com.produtoapi.historicoproduto.service;
 
+import com.produtoapi.historicoproduto.client.HistoricoClient;
+import com.produtoapi.historicoproduto.dto.HistoricoProdutoRequestDTO;
+import com.produtoapi.historicoproduto.enums.TipoEvento;
 import com.produtoapi.produto.domain.Produto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

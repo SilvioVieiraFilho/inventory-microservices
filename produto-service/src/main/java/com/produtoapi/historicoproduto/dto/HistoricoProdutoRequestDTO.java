@@ -1,5 +1,6 @@
-package com.produtoapi.historicoproduto.domain;
+package com.produtoapi.historicoproduto.dto;
 
+import com.produtoapi.historicoproduto.enums.TipoEvento;
 import lombok.*;
 
 @Getter

@@ -13,19 +13,11 @@ import java.time.LocalDateTime;
 public class HistoricoProdutoResponseDTO {
 
     private Long id;
-
     private Long produtoId;
-
     private String nomeProduto;
-
     private Integer quantidadeAnterior;
-
     private Integer quantidadeNova;
-
     private Integer diferenca;
-
     private LocalDateTime dataRegistro;
-
-
     private TipoEvento tipoEvento;
 }

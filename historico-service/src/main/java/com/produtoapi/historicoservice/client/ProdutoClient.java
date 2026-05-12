@@ -1,4 +1,4 @@
-package com.produtoapi.historicoservice;
+package com.produtoapi.historicoservice.client;
 
 import com.produtoapi.historicoservice.dto.ProdutoDTO;
 

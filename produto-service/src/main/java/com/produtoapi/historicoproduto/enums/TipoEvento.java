@@ -1,4 +1,4 @@
-package com.produtoapi.historicoproduto.domain;
+package com.produtoapi.historicoproduto.enums;
 
 public enum TipoEvento {
     PRODUTO_CRIADO,

@@ -4,10 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import com.produtoapi.exception.ProdutoNotFoundException;
-import com.produtoapi.historicoproduto.domain.HistoricoClient;
-import com.produtoapi.historicoproduto.domain.HistoricoIntegrationService;
-import com.produtoapi.historicoproduto.domain.HistoricoProdutoRequestDTO;
-import com.produtoapi.historicoproduto.domain.TipoEvento;
+import com.produtoapi.historicoproduto.client.HistoricoClient;
+import com.produtoapi.historicoproduto.service.HistoricoIntegrationService;
+import com.produtoapi.historicoproduto.enums.TipoEvento;
 import com.produtoapi.produto.specification.ProdutoSpecification;
 import com.produtoapi.produto.domain.Produto;
 import com.produtoapi.produto.domain.ProdutoDomainService;

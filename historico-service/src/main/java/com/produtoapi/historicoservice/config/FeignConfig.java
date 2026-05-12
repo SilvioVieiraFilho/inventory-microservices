@@ -1,4 +1,4 @@
-package com.produtoapi.historicoservice;
+package com.produtoapi.historicoservice.config;
 
 import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;

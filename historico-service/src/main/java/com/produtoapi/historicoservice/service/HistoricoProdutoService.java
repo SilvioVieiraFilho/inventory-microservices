@@ -75,9 +75,15 @@ public class HistoricoProdutoService {
 
     public List<HistoricoProdutoResponseDTO> buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
 
-       List<HistoricoProdutoResponseDTO> listaInicio = repository.findByDataRegistroBetween(inicio,fim).stream().map(historico -> mapper.toDTO(historico)).collect(Collectors.toList());
+        if (inicio != null && fim != null && inicio.isAfter(fim)) {
+            throw new IllegalArgumentException("Data de início não pode ser maior que a data fim.");
+        }
 
-       return listaInicio;
+        return repository.findByDataRegistroBetween(inicio, fim)
+                .stream()
+                .map(mapper::toDTO)
+                .toList();
+
      }
 
 }
