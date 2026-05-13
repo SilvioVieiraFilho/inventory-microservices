@@ -99,8 +99,6 @@ DOCKER --> HIST
 DOCKER --> DB
 ```
 
----
-
 # 🧩 Microservices
 
 ## 📦 produto-service
