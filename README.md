@@ -1,13 +1,3 @@
-Aqui está o **README completo pronto para Ctrl + C / Ctrl + V**, já com:
-
-- PostgreSQL + Docker adicionados
-- Arquitetura em Mermaid bonita
-- Texto organizado e profissional
-- Tudo consolidado em um único arquivo
-
----
-
-````md
 # 🚀 Inventory Microservices System
 
 <p align="center">
@@ -117,6 +107,7 @@ DOCKER --> PROD
 DOCKER --> HIST
 DOCKER --> DB
 ```
+
 ````
 
 ---
@@ -352,3 +343,4 @@ This project was created for portfolio and backend architecture studies.
 - CI/CD Pipeline
 - Kubernetes Deployment
 - Observability (Prometheus + Grafana)
+````
