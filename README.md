@@ -1,3 +1,13 @@
+Aqui está o **README completo pronto para Ctrl + C / Ctrl + V**, já com:
+
+- PostgreSQL + Docker adicionados
+- Arquitetura em Mermaid bonita
+- Texto organizado e profissional
+- Tudo consolidado em um único arquivo
+
+---
+
+````md
 # 🚀 Inventory Microservices System
 
 <p align="center">
@@ -12,6 +22,8 @@
 <img src="https://img.shields.io/badge/Spring_Security-JWT-success?style=for-the-badge" />
 <img src="https://img.shields.io/badge/OpenFeign-REST_Communication-blue?style=for-the-badge" />
 <img src="https://img.shields.io/badge/JUnit5-Tests-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/PostgreSQL-Database-316192?style=for-the-badge&logo=postgresql" />
+<img src="https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker" />
 
 </p>
 
@@ -26,7 +38,8 @@ Enterprise backend application based on **Microservices Architecture** using:
 - Spring Security + JWT
 - OpenFeign
 - Spring Data JPA
-- H2 Database
+- PostgreSQL
+- Docker & Docker Compose
 - Automated Testing
 
 The project simulates a real-world backend ecosystem focused on:
@@ -39,29 +52,72 @@ The project simulates a real-world backend ecosystem focused on:
 ✔ Event tracking  
 ✔ Clean Code  
 ✔ SOLID principles  
-✔ Enterprise backend patterns
+✔ Enterprise backend patterns  
+✔ Containerized infrastructure
+
+---
+
+# 🗄️ Database & Infrastructure
+
+The project was upgraded from in-memory database (H2) to **PostgreSQL** with full Docker support.
+
+## PostgreSQL
+
+- Persistent relational database
+- Shared between microservices
+- Production-ready configuration
+
+## Docker
+
+The system is fully containerized using Docker Compose.
+
+### Services
+
+- postgres-db
+- produto-service
+- historico-service
 
 ---
 
 # 🏗️ Architecture Overview
 
-```txt
-                 ┌────────────────────┐
-                 │       Client       │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-              │    produto-service     │
-              │  Inventory Management  │
-              └─────────┬──────────────┘
-                        │ REST/OpenFeign
-                        ▼
-              ┌────────────────────────┐
-              │   historico-service    │
-              │    Audit & Tracking    │
-              └────────────────────────┘
+```mermaid
+flowchart TB
+
+subgraph Client
+    CLIENT[Postman / Frontend]
+end
+
+subgraph Microservices
+    PROD[produto-service]
+    HIST[historico-service]
+end
+
+subgraph Database
+    DB[(PostgreSQL)]
+end
+
+subgraph Infrastructure
+    DOCKER[Docker Compose]
+end
+
+subgraph Security
+    JWT[JWT Authentication Filter]
+end
+
+CLIENT --> PROD
+PROD --> HIST
+PROD --> DB
+HIST --> DB
+
+PROD --> JWT
+HIST --> JWT
+
+DOCKER --> PROD
+DOCKER --> HIST
+DOCKER --> DB
 ```
+````
 
 ---
 
@@ -79,9 +135,8 @@ Responsible for inventory management and business rules.
 - Dynamic filters
 - JWT Authentication
 - Role-based Authorization
-- Event publishing
-- REST API
-- OpenFeign integration
+- Event publishing via OpenFeign
+- REST API integration
 
 ---
 
@@ -102,55 +157,42 @@ Responsible for audit logs and event persistence.
 
 # 🔗 Communication Between Services
 
-Microservices communicate using:
-
 - REST APIs
 - OpenFeign Client
 
-## Flow
+Flow:
 
 ```txt
-produto-service
-        │
-        ├── send inventory events
-        ▼
-historico-service
+produto-service → historico-service
 ```
 
 ---
 
 # 🔐 Security Layer
 
-Security implementation includes:
-
 - Spring Security
 - JWT Authentication
-- Stateless Authentication
-- Authorization Filters
-- Protected Routes
-- Access Control by Role
-- Authentication Middleware
+- Stateless sessions
+- Authorization filters
+- Role-based access control
+- Protected endpoints
 
 ---
 
 # 🧠 Business Rules
 
-# 📦 Product Rules
+## Product Rules
 
 - Duplicate products are merged automatically
 - SOLD_OUT products cannot receive stock
-- Product updates generate history events
+- All updates generate history events
 - Inventory operations are audited
-- Invalid inventory operations are blocked
 
----
-
-# 👤 User Rules
+## User Rules
 
 - BLOCKED users cannot authenticate
-- DISABLED users cannot access protected routes
-- Authentication requires valid JWT token
-- Invalid credentials return authentication errors
+- DISABLED users are denied access
+- JWT required for all protected routes
 
 ---
 
@@ -162,14 +204,15 @@ Security implementation includes:
 | Spring Boot 3   | Backend framework              |
 | Spring Security | Authentication & Authorization |
 | JWT             | Stateless authentication       |
-| OpenFeign       | Service communication          |
+| OpenFeign       | Microservice communication     |
 | Spring Data JPA | Persistence                    |
 | Hibernate       | ORM                            |
-| H2 Database     | In-memory database             |
-| MapStruct       | DTO Mapping                    |
-| JUnit 5         | Unit testing                   |
+| PostgreSQL      | Database                       |
+| Docker          | Containerization               |
+| Docker Compose  | Multi-service orchestration    |
+| MapStruct       | DTO mapping                    |
+| JUnit 5         | Testing                        |
 | Mockito         | Mocking                        |
-| Maven           | Dependency management          |
 
 ---
 
@@ -179,70 +222,49 @@ Security implementation includes:
 inventory-microservices/
 │
 ├── produto-service/
-│
 ├── historico-service/
-│
 ├── docs/
 │   ├── Arquitetura/
 │   ├── Postman/
-│   └── imagem/
-│
-└── README.md
+│   └── imagens/
+└── docker-compose.yml
 ```
 
 ---
 
-# 🧪 Automated Tests
+# 🧪 Tests
 
-The project contains:
-
-✔ Unit Tests  
-✔ Service Layer Tests  
-✔ Repository Tests  
-✔ JWT Security Tests  
-✔ Mockito-based mocks  
-✔ Business Rules Validation Tests
-
----
-
-# 📘 API Documentation
-
-After running the services:
-
-# produto-service
-
-```txt
-http://localhost:8080/swagger-ui.html
-```
-
-# historico-service
-
-```txt
-http://localhost:8081/swagger-ui.html
-```
+- Unit Tests
+- Service Layer Tests
+- Repository Tests
+- Security Tests (JWT)
+- Mockito mocks
+- Business rule validation tests
 
 ---
 
 # ▶️ Running The Project
 
-# Clone repository
+## 🐳 Docker (Recommended)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/inventory-microservices.git
+docker compose up --build
 ```
+
+This will start:
+
+- PostgreSQL
+- produto-service (8080)
+- historico-service (8081)
 
 ---
 
-# Run produto-service
+## 🧱 Manual Run
 
 ```bash
 cd produto-service
 ./mvnw spring-boot:run
 ```
-
----
-
-# Run historico-service
 
 ```bash
 cd historico-service
@@ -253,13 +275,13 @@ cd historico-service
 
 # 🔑 Authentication
 
-## Login endpoint
+## Login
 
 ```http
 POST /auth/login
 ```
 
-## Example response
+## Response
 
 ```json
 {
@@ -276,37 +298,33 @@ POST /auth/login
 
 # 📬 Postman Collection
 
-The repository contains a complete Postman collection with:
-
-- Authentication requests
-- Product CRUD
-- Inventory operations
-- JWT protected routes
-- Integration tests
-
-Location:
+Located at:
 
 ```txt
 docs/Postman/
 ```
 
+Includes:
+
+- Auth requests
+- Product CRUD
+- JWT tests
+- Integration flows
+
 ---
 
 # 📈 Technical Highlights
 
-✔ Microservices Architecture  
-✔ JWT Authentication  
-✔ Spring Security  
-✔ OpenFeign Communication  
-✔ REST APIs  
-✔ Domain Isolation  
-✔ Clean Architecture  
-✔ SOLID Principles  
-✔ Automated Tests  
-✔ DTO Pattern  
-✔ Enterprise Backend Design  
-✔ Audit System  
-✔ Real Business Rules
+✔ Microservices Architecture
+✔ JWT Security
+✔ OpenFeign Communication
+✔ PostgreSQL Integration
+✔ Dockerized System
+✔ Clean Architecture
+✔ SOLID Principles
+✔ Event Tracking System
+✔ DTO Pattern
+✔ Enterprise Backend Design
 
 ---
 
@@ -319,21 +337,18 @@ Backend Developer focused on:
 - Java
 - Spring Boot
 - Microservices
-- REST APIs
 - Security
-- Backend Architecture
+- Distributed Systems
 
-This project was created for professional portfolio and backend architecture studies.
+This project was created for portfolio and backend architecture studies.
 
 ---
 
 # ⭐ Future Improvements
 
-- Docker support
 - API Gateway
-- Service Discovery
-- PostgreSQL integration
-- Kafka event streaming
-- CI/CD pipeline
-- Kubernetes deployment
-- Observability & Monitoring
+- Service Discovery (Eureka)
+- Kafka Event Streaming
+- CI/CD Pipeline
+- Kubernetes Deployment
+- Observability (Prometheus + Grafana)
