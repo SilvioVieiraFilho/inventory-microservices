@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Table(name = "tb_historico_produto")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class HistoricoProduto {

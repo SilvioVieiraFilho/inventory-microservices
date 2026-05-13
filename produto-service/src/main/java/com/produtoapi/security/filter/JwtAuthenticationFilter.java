@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -24,67 +25,81 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
+        String authHeader = request.getHeader("Authorization");
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String email;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
+        String token = authHeader.substring(7);
+
+
         try {
-            email = jwtService.extractUsername(jwt);
-        } catch (Exception e) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            String email = jwtService.extractUsername(token);
 
-            Usuario usuario = usuarioRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            if (email != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // 🔥 valida token
-            if (!jwtService.isTokenValid(jwt, usuario.getEmail())) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
-                return;
-            }
+                Usuario usuario = usuarioRepository
+                        .findByEmail(email)
+                        .orElse(null);
 
+                if (usuario == null) {
 
-            // 🔥 valida status
-            try {
-                if (usuario.getStatus() == null) {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Usuário sem status");
+                    response.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Usuário não encontrado"
+                    );
+
                     return;
                 }
 
-                usuario.getStatus().validarLogin();
+                if (!jwtService.isTokenValid(token)) {
 
-            } catch (RuntimeException e) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-                return;
-            }
-
-            // 🔥 ROLE correta
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            usuario,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + usuario.getRole()))
+                    response.sendError(
+                            HttpServletResponse.SC_UNAUTHORIZED,
+                            "Token inválido"
                     );
 
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+                    return;
+                }
+
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                usuario,
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + usuario.getRole()
+                                        )
+                                )
+                        );
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(auth);
+            }
+
+        } catch (Exception e) {
+
+
+            response.sendError(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Token inválido"
+            );
+
+            return;
         }
 
         filterChain.doFilter(request, response);
     }
-
 }

@@ -41,14 +41,9 @@ public class HistoricoProdutoService {
 
         HistoricoProduto historicoSalvo = repository.save(historico);
 
-        //return mapper.toDTO(historicoSalvo);
+        return mapper.toDTO(historicoSalvo);
 
-        HistoricoProdutoResponseDTO response = new HistoricoProdutoResponseDTO();
 
-        response.setId(historicoSalvo.getId());
-        response.setNomeProduto(historicoSalvo.getNomeProduto());
-
-        return response;
     }
     public  HistoricoProdutoResponseDTO listarPorid (Long id ){
 

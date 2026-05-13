@@ -1,74 +1,112 @@
 package com.produtoapi.security;
 
-
-import ch.qos.logback.core.status.Status;
+import com.produtoapi.security.filter.JwtAuthenticationFilter;
 import com.produtoapi.security.service.JwtService;
-import com.produtoapi.usuario.domain.Usuario;
-import com.produtoapi.usuario.enums.StatusUsuario;
 import com.produtoapi.usuario.repository.UsuarioRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@SpringBootTest
-@AutoConfigureMockMvc
 class JwtAuthenticationFilterTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private JwtService jwtService;
-
-    @MockBean
     private UsuarioRepository usuarioRepository;
+    private JwtService jwtService;
+    private JwtAuthenticationFilter filter;
 
-    @Test
-    void deveAutenticarComTokenValido() throws Exception {
+    private HttpServletRequest request;
+    private HttpServletResponse response;
+    private FilterChain filterChain;
 
-        String token = "valid-token";
+    @BeforeEach
+    void setup() {
 
-        Usuario usuario = Mockito.mock(Usuario.class);
-        StatusUsuario status = Mockito.mock(StatusUsuario.class);
+        jwtService = mock(JwtService.class);
 
-        Mockito.when(jwtService.extractUsername(token))
-                .thenReturn("user@email.com");
+        usuarioRepository = mock(UsuarioRepository.class);
 
-        Mockito.when(jwtService.isTokenValid(token, "user@email.com"))
-                .thenReturn(true);
+        request = mock(HttpServletRequest.class);
 
-        Mockito.when(usuarioRepository.findByEmail("user@email.com"))
-                .thenReturn(Optional.of(usuario));
+        response = mock(HttpServletResponse.class);
 
-        Mockito.when(usuario.getEmail()).thenReturn("user@email.com");
-        Mockito.when(usuario.getRole()).thenReturn("USER");
-        Mockito.when(usuario.getStatus()).thenReturn(status);
-        Mockito.doNothing().when(status).validarLogin();
+        filterChain = mock(FilterChain.class);
 
-        mockMvc.perform(get("/test")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk());
+        filter = new JwtAuthenticationFilter(
+                jwtService,
+                usuarioRepository
+        );
+
+        SecurityContextHolder.clearContext();
     }
 
     @Test
-    void deveNegarComTokenInvalido() throws Exception {
+    void devePassarQuandoTokenValido() throws Exception {
 
-        String token = "invalid-token";
+        String token = "fake-token";
 
-        Mockito.when(jwtService.extractUsername(token))
-                .thenThrow(new RuntimeException("Token inválido"));
+        when(request.getHeader("Authorization"))
+                .thenReturn("Bearer " + token);
 
-        mockMvc.perform(get("/test")
-                        .header("Authorization", "Bearer " + token))
-                .andExpect(status().isForbidden());
+        when(jwtService.isTokenValid(token))
+                .thenReturn(true);
+
+        when(jwtService.extractUsername(token))
+                .thenReturn("silvio@email.com");
+
+        when(jwtService.extractRole(token))
+                .thenReturn("USER");
+
+        filter.doFilter(request, response, filterChain);
+
+        assertNotNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+
+        assertEquals(
+                "silvio@email.com",
+                SecurityContextHolder.getContext()
+                        .getAuthentication()
+                        .getPrincipal()
+        );
+
+        verify(filterChain, times(1))
+                .doFilter(request, response);
+    }
+
+    @Test
+    void naoDeveAutenticarQuandoHeaderNulo() throws Exception {
+
+        when(request.getHeader("Authorization"))
+                .thenReturn(null);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+
+        verify(filterChain, times(1))
+                .doFilter(request, response);
+    }
+
+    @Test
+    void naoDeveAutenticarQuandoHeaderInvalido() throws Exception {
+
+        when(request.getHeader("Authorization"))
+                .thenReturn("Invalid");
+
+        filter.doFilter(request, response, filterChain);
+
+        assertNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+
+        verify(filterChain, times(1))
+                .doFilter(request, response);
     }
 }

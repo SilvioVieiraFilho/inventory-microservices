@@ -1,6 +1,7 @@
 package com.produtoapi.security.controller;
 
 
+import com.produtoapi.security.dto.LoginResponseDTO;
 import com.produtoapi.usuario.dto.UsuarioRequestDTO;
 import com.produtoapi.usuario.dto.UsuarioResponseDTO;
 import com.produtoapi.usuario.domain.Usuario;
@@ -21,7 +22,9 @@ public class AuthController {
     private final JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<UsuarioResponseDTO>> login(@RequestBody UsuarioRequestDTO request) {
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(
+            @RequestBody UsuarioRequestDTO request
+    ) {
 
         UsuarioResponseDTO usuario = usuarioService.autenticar(
                 request.getEmail(),
@@ -29,36 +32,43 @@ public class AuthController {
         );
 
         String token = jwtService.generateToken(
+                request.getEmail(),
+                usuario.getRole()
+        );
+
+        LoginResponseDTO responseDTO = new LoginResponseDTO(
+                token,
                 usuario.getEmail(),
                 usuario.getRole()
         );
 
-        UsuarioResponseDTO response = UsuarioResponseDTO.builder()
-                .token(token)
-                .type("Bearer")
-                .email(usuario.getEmail())
-                .role(usuario.getRole())
-                .build();
-
-
         return ResponseEntity.ok(
                 new ApiResponse<>(
                         "Login realizado com sucesso",
-                        response
-                ));
-
+                        responseDTO
+                )
+        );
     }
 
-
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(@RequestBody UsuarioRequestDTO usuarioRequestDTO) {
+    public ResponseEntity<ApiResponse<String>> register(
+            @RequestBody UsuarioRequestDTO usuarioRequestDTO
+    ) {
 
-        usuarioService.salvar(usuarioRequestDTO);
+        UsuarioResponseDTO usuario = usuarioService.salvar(usuarioRequestDTO);
+
+        Usuario usuarioEntity = new Usuario();
+
+        usuarioEntity.setEmail(usuario.getEmail());
+        usuarioEntity.setRole(usuario.getRole());
+
+        String token = jwtService.generateToken(usuarioEntity);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(
                         "Usuário cadastrado com sucesso",
-                        "OK"
+                        "OK",
+                        token
                 )
         );
     }
