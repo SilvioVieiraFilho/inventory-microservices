@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
         name = "historico",
-        url = "http://localhost:8081",
+        url = "http://historico-service:8081",
         configuration = FeignConfig.class
 )
 public interface HistoricoClient {

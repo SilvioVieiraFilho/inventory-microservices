@@ -22,7 +22,7 @@ public class JwtService {
     private String secret;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
     public String extractUsername(String token) {
 
