@@ -1,235 +1,313 @@
-# 🚀 Spring Boot Product API
+# 🚀 Inventory Microservices System
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=180&section=header&text=Product%20API%20System&fontSize=28&fontColor=ffffff" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=240&section=header&text=Inventory%20Microservices%20System&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=38" />
 </p>
 
-## 📌 Sobre o Projeto
+<p align="center">
 
-API REST desenvolvida com **Java + Spring Boot**, com foco em boas práticas de arquitetura moderna, segurança com JWT, testes automatizados e organização por domínio (Feature-Based Architecture).
+<img src="https://img.shields.io/badge/Java-21-red?style=for-the-badge&logo=openjdk" />
+<img src="https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot" />
+<img src="https://img.shields.io/badge/Microservices-Architecture-blueviolet?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Spring_Security-JWT-success?style=for-the-badge" />
+<img src="https://img.shields.io/badge/OpenFeign-REST_Communication-blue?style=for-the-badge" />
+<img src="https://img.shields.io/badge/JUnit5-Tests-orange?style=for-the-badge" />
+<img src="https://img.shields.io/badge/PostgreSQL-Database-316192?style=for-the-badge&logo=postgresql" />
+<img src="https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker" />
 
-O sistema simula uma aplicação real de gestão de produtos com autenticação de usuários, regras de negócio complexas e histórico de alterações.
-
----
-
-## 🧠 Objetivos
-
-- Criar uma API escalável e organizada por domínio
-- Aplicar arquitetura moderna (Feature-Based Architecture)
-- Implementar autenticação com JWT
-- Aplicar testes unitários com JUnit e Mockito
-- Trabalhar com regras de negócio reais
-- Garantir código limpo e de fácil manutenção
+</p>
 
 ---
 
-## 🏗️ Arquitetura do Projeto
+# 📌 About The Project
 
-O projeto foi estruturado em **Feature-Based Architecture**, separando cada domínio de forma independente.
+Enterprise backend application based on **Microservices Architecture** using:
 
-com.produtoapi
-├── produto
-├── usuario
-├── security
-├── historicoproduto
-├── exception
-├── configuration
-└── response
+- Java 21
+- Spring Boot 3
+- Spring Security + JWT
+- OpenFeign
+- Spring Data JPA
+- PostgreSQL
+- Docker & Docker Compose
+- Automated Testing
 
----
+The project simulates a real-world backend ecosystem focused on:
 
-## 🧩 Estrutura por Domínio
-
-### 🟦 Produto
-
-produto
-├── controller
-├── service
-├── domain
-├── dto
-├── repository
-├── mapper
-├── enums
-├── specification
-└── historico
-
+✔ Scalable architecture  
+✔ Service isolation  
+✔ REST communication  
+✔ Authentication & Authorization  
+✔ Business rules validation  
+✔ Event tracking  
+✔ Clean Code  
+✔ SOLID principles  
+✔ Enterprise backend patterns  
+✔ Containerized infrastructure
 
 ---
 
-### 🟩 Usuário
+# 🗄️ Database & Infrastructure
 
-usuario
-├── controller
-├── service
-├── domain
-├── dto
-├── repository
-├── mapper
-└── enums
+This project was upgraded from H2 to **PostgreSQL** and fully containerized with Docker.
 
+## PostgreSQL
 
----
+- Persistent relational database
+- Shared between microservices
+- Production-ready configuration
 
-### 🟪 Security (JWT)
+## Docker
 
-security
-├── config
-├── filter
-├── service
-└── controller
+Full orchestration using Docker Compose:
 
-
+- postgres-db
+- produto-service
+- historico-service
 
 ---
 
-## 🔐 Autenticação
+# 🏗️ Architecture Overview
 
-A API utiliza **JWT (JSON Web Token)** para autenticação stateless.
+```mermaid
+flowchart TB
 
-### Fluxo:
+CLIENT[Client / Postman / Frontend]
 
-1. Usuário realiza login
-2. API valida credenciais
-3. Token JWT é gerado
-4. Token enviado no header:
+subgraph SERVICES
+    PROD[produto-service]
+    HIST[historico-service]
+end
 
-Authorization: Bearer <token>
+DB[(PostgreSQL)]
 
+DOCKER[Docker Compose]
 
----
+JWT[JWT Security Filter]
 
-## 🛡️ Segurança
+CLIENT --> PROD
+PROD --> HIST
 
-- Autenticação JWT
-- Filtro de requisições protegidas
-- Controle de acesso por roles (USER / ADMIN)
-- Validação de token em todas as rotas protegidas
+PROD --> DB
+HIST --> DB
 
----
+PROD --> JWT
+HIST --> JWT
 
-## 📦 Funcionalidades
-
-### 🟦 Produto
-- Criar produto
-- Atualizar produto
-- Buscar por ID
-- Listar produtos
-- Filtros dinâmicos (Specification)
-- Merge de produtos (regra de negócio)
-- Histórico de alterações
+DOCKER --> PROD
+DOCKER --> HIST
+DOCKER --> DB
+```
 
 ---
 
-### 🟩 Usuário
-- Cadastro de usuário
-- Autenticação
-- Controle de status:
-    - ATIVO
-    - DESATIVADO
-    - BLOQUEADO
-- Validação de login
+# 🧩 Microservices
+
+## 📦 produto-service
+
+Responsável por gerenciamento de produtos e regras de negócio.
+
+### Features
+
+- CRUD de produtos
+- Controle de estoque
+- Merge de produtos duplicados
+- Filtros dinâmicos
+- Integração com histórico via OpenFeign
+- Segurança JWT
+- Autorização por role
 
 ---
 
-## 🔍 Regras de Negócio
+## 🕘 historico-service
 
-- Produtos duplicados (mesmo nome, preço e status) somam quantidade automaticamente
-- Produtos com status **ESGOTADO** não podem receber quantidade
-- Usuários com status **DESATIVADO ou BLOQUEADO** não podem autenticar
-- Login exige e-mail e senha válidos
-- Usuário inativo não pode acessar o sistema
+Responsável por auditoria e eventos.
 
----
+### Features
 
-## 🧪 Testes
-
-- JUnit 5 para testes unitários
-- Mockito para mocks
-- Cobertura de testes com JaCoCo
-- Testes de service, domain e security
+- Registro de eventos de produtos
+- Auditoria de estoque
+- Persistência de histórico
+- Consumo de eventos via REST
+- Segurança JWT
 
 ---
 
-# 📊 Tratamento de Erros
+# 🔗 Comunicação entre serviços
+
+- REST APIs
+- OpenFeign
+
+Fluxo:
+
+```txt
+produto-service → historico-service
+```
+
+---
+
+# 🔐 Security Layer
+
+- Spring Security
+- JWT Authentication
+- Stateless session
+- Authorization filters
+- Role-based access
+
+---
+
+# 🧠 Business Rules
+
+## Produtos
+
+- Produtos duplicados são automaticamente mesclados
+- Atualizações geram eventos no histórico
+- Controle de estoque validado
+
+## Usuários
+
+- Usuários bloqueados não autenticam
+- Token JWT obrigatório
+- Acesso baseado em roles
+
+---
+
+# 🛠️ Technologies
+
+| Tech            | Purpose                    |
+| --------------- | -------------------------- |
+| Java 21         | Language                   |
+| Spring Boot 3   | Framework                  |
+| Spring Security | Security                   |
+| JWT             | Authentication             |
+| OpenFeign       | Microservice communication |
+| Spring Data JPA | Persistence                |
+| Hibernate       | ORM                        |
+| PostgreSQL      | Database                   |
+| Docker          | Containerization           |
+| Docker Compose  | Orchestration              |
+| MapStruct       | DTO mapping                |
+| JUnit 5         | Testing                    |
+| Mockito         | Mocking                    |
+
+---
+
+# 📂 Project Structure
+
+```txt
+inventory-microservices/
+│
+├── produto-service/
+├── historico-service/
+├── docker-compose.yml
+├── docs/
+│   ├── Arquitetura/
+│   ├── Postman/
+│   └── imagens/
+└── README.md
+```
+
+---
+
+# 🧪 Tests
+
+- Unit tests
+- Service tests
+- Repository tests
+- Security tests (JWT)
+- Mockito mocks
+- Business rules tests
+
+---
+
+# ▶️ Running The Project
+
+## 🐳 Docker (Recommended)
+
+```bash
+docker compose up --build
+```
+
+## 🧱 Manual run
+
+```bash
+cd produto-service
+./mvnw spring-boot:run
+```
+
+```bash
+cd historico-service
+./mvnw spring-boot:run
+```
+
+---
+
+# 🔑 Authentication
+
+```http
+POST /auth/login
+```
 
 ```json
 {
-  "timestamp": "2026-05-06T10:30:00",
-  "status": 400,
-  "error": "BusinessException",
-  "message": "Usuário inativo ou bloqueado"
+  "message": "Login realizado com sucesso",
+  "data": {
+    "token": "JWT_TOKEN",
+    "email": "user@email.com",
+    "role": "USER"
+  }
 }
 ```
-___
-## 🛠️ Tecnologias utilizadas
-- Java 17+
-- Spring Boot
-- Spring Security
-- Spring Data JPA
-- Hibernate
-- JWT
-- MapStruct
-- JUnit 5
-- Mockito
-- Maven
-- H2 Database
 
-___
+---
 
-## 📁 Estrutura do projeto
+# 📬 Postman Collection
 
-src/main/java
-└── com.produtoapi
-├── produto
-├── usuario
-├── security
-├── historicoproduto
-├── exception
-├── configuration
-└── response
+Local:
 
-## 🎯 Arquitetura e decisões técnicas
-- Separação por domínio (Feature-Based Architecture)
-- Camada Domain para regras de negócio
-- DTOs para desacoplamento da entidade 
-- Mappers com MapStruct
-- Autenticação stateless com JWT
-- Histórico de produtos para auditoria
-- Filtros dinâmicos com Specification
-- Código organizado seguindo Clean Code e SOLID
-___
- 
-## 📈 Evolução do projeto
-
-Este projeto evoluiu para um nível próximo de aplicações reais de mercado:
-
-
-✔️ Arquitetura escalável  
-✔️ Segurança com JWT  
-✔️ Domínios isolados  
-✔️ Regras de negócio reais  
-✔️ Testes automatizados  
-✔️ Código organizado e limpo  
-✔️ Pronto para evolução para microsserviços
-___
-
-
-## ▶️ Como executar o projeto
-
-### 1. Clonar o repositório
-
-```bash
-git clone https://github.com/SEU-USUARIO/springboot-product-api.git
-
-cd springboot-product-api
-
-./mvnw spring-boot:run
+```txt
+docs/Postman/
 ```
-___
 
+---
 
+# 📈 Highlights
 
-👨‍💻 **Autor**  
-Silvio Rodrigues Vieira Filho  
+✔ Microservices Architecture
+✔ Docker + PostgreSQL
+✔ JWT Security
+✔ OpenFeign Communication
+✔ Clean Architecture
+✔ SOLID Principles
+✔ Event-driven tracking
+✔ Production-ready structure
 
-📌 Projeto pessoal focado em evolução como desenvolvedor backend Java
+---
+
+# 👨‍💻 Author
+
+**Silvio Rodrigues Vieira Filho**
+
+Backend Developer focused on:
+
+- Java
+- Spring Boot
+- Microservices
+- Security
+- Distributed Systems
+
+---
+
+# ⭐ Future Improvements
+
+- API Gateway
+- Service Discovery (Eureka)
+- Kafka Event Streaming
+- CI/CD Pipeline
+- Kubernetes Deployment
+- Observability (Prometheus + Grafana)
+
+```
+
+---
+```

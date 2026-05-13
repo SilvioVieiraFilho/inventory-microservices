@@ -49,7 +49,7 @@ The project simulates a real-world backend ecosystem focused on:
 
 # 🗄️ Database & Infrastructure
 
-The project was upgraded from in-memory database (H2) to **PostgreSQL** with full Docker support.
+This project was upgraded from H2 to **PostgreSQL** and fully containerized with Docker.
 
 ## PostgreSQL
 
@@ -59,9 +59,7 @@ The project was upgraded from in-memory database (H2) to **PostgreSQL** with ful
 
 ## Docker
 
-The system is fully containerized using Docker Compose.
-
-### Services
+Full orchestration using Docker Compose:
 
 - postgres-db
 - produto-service
@@ -74,29 +72,22 @@ The system is fully containerized using Docker Compose.
 ```mermaid
 flowchart TB
 
-subgraph Client
-    CLIENT[Postman / Frontend]
-end
+CLIENT[Client / Postman / Frontend]
 
-subgraph Microservices
+subgraph SERVICES
     PROD[produto-service]
     HIST[historico-service]
 end
 
-subgraph Database
-    DB[(PostgreSQL)]
-end
+DB[(PostgreSQL)]
 
-subgraph Infrastructure
-    DOCKER[Docker Compose]
-end
+DOCKER[Docker Compose]
 
-subgraph Security
-    JWT[JWT Authentication Filter]
-end
+JWT[JWT Security Filter]
 
 CLIENT --> PROD
 PROD --> HIST
+
 PROD --> DB
 HIST --> DB
 
@@ -108,50 +99,46 @@ DOCKER --> HIST
 DOCKER --> DB
 ```
 
-````
-
 ---
 
 # 🧩 Microservices
 
-# 📦 produto-service
+## 📦 produto-service
 
-Responsible for inventory management and business rules.
+Responsável por gerenciamento de produtos e regras de negócio.
 
-## Features
+### Features
 
-- Product CRUD
-- Inventory control
-- Product merge logic
-- Dynamic filters
-- JWT Authentication
-- Role-based Authorization
-- Event publishing via OpenFeign
-- REST API integration
-
----
-
-# 🕘 historico-service
-
-Responsible for audit logs and event persistence.
-
-## Features
-
-- Product event history
-- Audit logging
-- Inventory tracking
-- Event persistence
-- JWT protected routes
-- REST event consumption
+- CRUD de produtos
+- Controle de estoque
+- Merge de produtos duplicados
+- Filtros dinâmicos
+- Integração com histórico via OpenFeign
+- Segurança JWT
+- Autorização por role
 
 ---
 
-# 🔗 Communication Between Services
+## 🕘 historico-service
+
+Responsável por auditoria e eventos.
+
+### Features
+
+- Registro de eventos de produtos
+- Auditoria de estoque
+- Persistência de histórico
+- Consumo de eventos via REST
+- Segurança JWT
+
+---
+
+# 🔗 Comunicação entre serviços
 
 - REST APIs
-- OpenFeign Client
+- OpenFeign
 
-Flow:
+Fluxo:
 
 ```txt
 produto-service → historico-service
@@ -163,47 +150,45 @@ produto-service → historico-service
 
 - Spring Security
 - JWT Authentication
-- Stateless sessions
+- Stateless session
 - Authorization filters
-- Role-based access control
-- Protected endpoints
+- Role-based access
 
 ---
 
 # 🧠 Business Rules
 
-## Product Rules
+## Produtos
 
-- Duplicate products are merged automatically
-- SOLD_OUT products cannot receive stock
-- All updates generate history events
-- Inventory operations are audited
+- Produtos duplicados são automaticamente mesclados
+- Atualizações geram eventos no histórico
+- Controle de estoque validado
 
-## User Rules
+## Usuários
 
-- BLOCKED users cannot authenticate
-- DISABLED users are denied access
-- JWT required for all protected routes
+- Usuários bloqueados não autenticam
+- Token JWT obrigatório
+- Acesso baseado em roles
 
 ---
 
 # 🛠️ Technologies
 
-| Technology      | Purpose                        |
-| --------------- | ------------------------------ |
-| Java 21         | Main language                  |
-| Spring Boot 3   | Backend framework              |
-| Spring Security | Authentication & Authorization |
-| JWT             | Stateless authentication       |
-| OpenFeign       | Microservice communication     |
-| Spring Data JPA | Persistence                    |
-| Hibernate       | ORM                            |
-| PostgreSQL      | Database                       |
-| Docker          | Containerization               |
-| Docker Compose  | Multi-service orchestration    |
-| MapStruct       | DTO mapping                    |
-| JUnit 5         | Testing                        |
-| Mockito         | Mocking                        |
+| Tech            | Purpose                    |
+| --------------- | -------------------------- |
+| Java 21         | Language                   |
+| Spring Boot 3   | Framework                  |
+| Spring Security | Security                   |
+| JWT             | Authentication             |
+| OpenFeign       | Microservice communication |
+| Spring Data JPA | Persistence                |
+| Hibernate       | ORM                        |
+| PostgreSQL      | Database                   |
+| Docker          | Containerization           |
+| Docker Compose  | Orchestration              |
+| MapStruct       | DTO mapping                |
+| JUnit 5         | Testing                    |
+| Mockito         | Mocking                    |
 
 ---
 
@@ -214,23 +199,24 @@ inventory-microservices/
 │
 ├── produto-service/
 ├── historico-service/
+├── docker-compose.yml
 ├── docs/
 │   ├── Arquitetura/
 │   ├── Postman/
 │   └── imagens/
-└── docker-compose.yml
+└── README.md
 ```
 
 ---
 
 # 🧪 Tests
 
-- Unit Tests
-- Service Layer Tests
-- Repository Tests
-- Security Tests (JWT)
+- Unit tests
+- Service tests
+- Repository tests
+- Security tests (JWT)
 - Mockito mocks
-- Business rule validation tests
+- Business rules tests
 
 ---
 
@@ -242,15 +228,7 @@ inventory-microservices/
 docker compose up --build
 ```
 
-This will start:
-
-- PostgreSQL
-- produto-service (8080)
-- historico-service (8081)
-
----
-
-## 🧱 Manual Run
+## 🧱 Manual run
 
 ```bash
 cd produto-service
@@ -266,13 +244,9 @@ cd historico-service
 
 # 🔑 Authentication
 
-## Login
-
 ```http
 POST /auth/login
 ```
-
-## Response
 
 ```json
 {
@@ -289,39 +263,30 @@ POST /auth/login
 
 # 📬 Postman Collection
 
-Located at:
+Local:
 
 ```txt
 docs/Postman/
 ```
 
-Includes:
-
-- Auth requests
-- Product CRUD
-- JWT tests
-- Integration flows
-
 ---
 
-# 📈 Technical Highlights
+# 📈 Highlights
 
 ✔ Microservices Architecture
+✔ Docker + PostgreSQL
 ✔ JWT Security
 ✔ OpenFeign Communication
-✔ PostgreSQL Integration
-✔ Dockerized System
 ✔ Clean Architecture
 ✔ SOLID Principles
-✔ Event Tracking System
-✔ DTO Pattern
-✔ Enterprise Backend Design
+✔ Event-driven tracking
+✔ Production-ready structure
 
 ---
 
 # 👨‍💻 Author
 
-## Silvio Rodrigues Vieira Filho
+**Silvio Rodrigues Vieira Filho**
 
 Backend Developer focused on:
 
@@ -330,8 +295,6 @@ Backend Developer focused on:
 - Microservices
 - Security
 - Distributed Systems
-
-This project was created for portfolio and backend architecture studies.
 
 ---
 
@@ -343,4 +306,8 @@ This project was created for portfolio and backend architecture studies.
 - CI/CD Pipeline
 - Kubernetes Deployment
 - Observability (Prometheus + Grafana)
-````
+
+```
+
+---
+```
