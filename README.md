@@ -1,7 +1,7 @@
 # 🚀 Inventory Microservices System
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=220&section=header&text=Inventory%20Microservices%20System&fontSize=36&fontColor=ffffff&animation=fadeIn" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=240&section=header&text=Inventory%20Microservices%20System&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=38" />
 </p>
 
 <p align="center">
@@ -11,29 +11,39 @@
 <img src="https://img.shields.io/badge/Microservices-Architecture-blueviolet?style=for-the-badge" />
 <img src="https://img.shields.io/badge/Spring_Security-JWT-success?style=for-the-badge" />
 <img src="https://img.shields.io/badge/OpenFeign-REST_Communication-blue?style=for-the-badge" />
+<img src="https://img.shields.io/badge/JUnit5-Tests-orange?style=for-the-badge" />
 
 </p>
 
 ---
 
-# 📌 About the Project
+# 📌 About The Project
 
-Backend system based on **Microservices Architecture** using **Java + Spring Boot**.
+Enterprise backend application based on **Microservices Architecture** using:
 
-This project was designed to simulate a real-world backend environment, applying modern software engineering practices focused on:
-
-- Scalable Architecture
-- Service Communication
-- JWT Authentication
-- Domain Isolation
-- Clean Code
-- SOLID Principles
+- Java 21
+- Spring Boot 3
+- Spring Security + JWT
+- OpenFeign
+- Spring Data JPA
+- H2 Database
 - Automated Testing
-- Real Business Rules
+
+The project simulates a real-world backend ecosystem focused on:
+
+✔ Scalable architecture  
+✔ Service isolation  
+✔ REST communication  
+✔ Authentication & Authorization  
+✔ Business rules validation  
+✔ Event tracking  
+✔ Clean Code  
+✔ SOLID principles  
+✔ Enterprise backend patterns
 
 ---
 
-# 🏗️ System Architecture
+# 🏗️ Architecture Overview
 
 ```txt
                  ┌────────────────────┐
@@ -43,11 +53,13 @@ This project was designed to simulate a real-world backend environment, applying
                            ▼
               ┌────────────────────────┐
               │    produto-service     │
+              │  Inventory Management  │
               └─────────┬──────────────┘
                         │ REST/OpenFeign
                         ▼
               ┌────────────────────────┐
               │   historico-service    │
+              │    Audit & Tracking    │
               └────────────────────────┘
 ```
 
@@ -55,84 +67,90 @@ This project was designed to simulate a real-world backend environment, applying
 
 # 🧩 Microservices
 
-## 📦 produto-service
+# 📦 produto-service
 
-Responsible for product management and business rules.
+Responsible for inventory management and business rules.
 
-### Features
+## Features
 
-- Product registration
-- Product update
-- Dynamic filtering
-- Product merge logic
+- Product CRUD
 - Inventory control
-- JWT Security
-- Integration with historico-service
+- Product merge logic
+- Dynamic filters
+- JWT Authentication
+- Role-based Authorization
+- Event publishing
+- REST API
+- OpenFeign integration
 
 ---
 
-## 🕘 historico-service
+# 🕘 historico-service
 
-Responsible for audit logs and history tracking.
+Responsible for audit logs and event persistence.
 
-### Features
+## Features
 
 - Product event history
-- Change tracking
 - Audit logging
+- Inventory tracking
 - Event persistence
+- JWT protected routes
 - REST event consumption
 
 ---
 
-# 🔗 Service Communication
+# 🔗 Communication Between Services
 
-Microservices communicate through:
+Microservices communicate using:
 
-- REST API
+- REST APIs
 - OpenFeign Client
 
-Flow:
+## Flow
 
 ```txt
 produto-service
         │
-        ├── sends events
+        ├── send inventory events
         ▼
 historico-service
 ```
 
 ---
 
-# 🔐 Security
+# 🔐 Security Layer
 
-Implemented using:
+Security implementation includes:
 
 - Spring Security
 - JWT Authentication
 - Stateless Authentication
 - Authorization Filters
 - Protected Routes
-- Role-based Access Control
+- Access Control by Role
+- Authentication Middleware
 
 ---
 
 # 🧠 Business Rules
 
-### 📦 Product Rules
+# 📦 Product Rules
 
 - Duplicate products are merged automatically
 - SOLD_OUT products cannot receive stock
 - Product updates generate history events
 - Inventory operations are audited
+- Invalid inventory operations are blocked
 
 ---
 
-### 👤 User Rules
+# 👤 User Rules
 
 - BLOCKED users cannot authenticate
-- DISABLED users cannot access the system
-- Login requires valid credentials
+- DISABLED users cannot access protected routes
+- Authentication requires valid JWT token
+- Invalid credentials return authentication errors
 
 ---
 
@@ -141,7 +159,7 @@ Implemented using:
 | Technology      | Purpose                        |
 | --------------- | ------------------------------ |
 | Java 21         | Main language                  |
-| Spring Boot     | Backend framework              |
+| Spring Boot 3   | Backend framework              |
 | Spring Security | Authentication & Authorization |
 | JWT             | Stateless authentication       |
 | OpenFeign       | Service communication          |
@@ -165,39 +183,39 @@ inventory-microservices/
 ├── historico-service/
 │
 ├── docs/
-│   ├── architecture.png
-│   ├── uml.png
-│   └── der.png
+│   ├── Arquitetura/
+│   ├── Postman/
+│   └── imagem/
 │
 └── README.md
 ```
 
 ---
 
-# 🧪 Testing
+# 🧪 Automated Tests
 
-The project includes:
+The project contains:
 
-- Unit Tests
-- Domain Tests
-- Service Layer Tests
-- Security Tests
-- Mockito-based mocks
-- JaCoCo coverage
+✔ Unit Tests  
+✔ Service Layer Tests  
+✔ Repository Tests  
+✔ JWT Security Tests  
+✔ Mockito-based mocks  
+✔ Business Rules Validation Tests
 
 ---
 
 # 📘 API Documentation
 
-After starting the services:
+After running the services:
 
-## produto-service
+# produto-service
 
 ```txt
 http://localhost:8080/swagger-ui.html
 ```
 
-## historico-service
+# historico-service
 
 ```txt
 http://localhost:8081/swagger-ui.html
@@ -205,17 +223,17 @@ http://localhost:8081/swagger-ui.html
 
 ---
 
-# ▶️ Running the Project
+# ▶️ Running The Project
 
-## Clone repository
+# Clone repository
 
 ```bash
-git clone YOUR_REPOSITORY
+git clone https://github.com/YOUR_USERNAME/inventory-microservices.git
 ```
 
 ---
 
-## Run produto-service
+# Run produto-service
 
 ```bash
 cd produto-service
@@ -224,7 +242,7 @@ cd produto-service
 
 ---
 
-## Run historico-service
+# Run historico-service
 
 ```bash
 cd historico-service
@@ -233,26 +251,89 @@ cd historico-service
 
 ---
 
+# 🔑 Authentication
+
+## Login endpoint
+
+```http
+POST /auth/login
+```
+
+## Example response
+
+```json
+{
+  "message": "Login realizado com sucesso",
+  "data": {
+    "token": "JWT_TOKEN",
+    "email": "user@email.com",
+    "role": "USER"
+  }
+}
+```
+
+---
+
+# 📬 Postman Collection
+
+The repository contains a complete Postman collection with:
+
+- Authentication requests
+- Product CRUD
+- Inventory operations
+- JWT protected routes
+- Integration tests
+
+Location:
+
+```txt
+docs/Postman/
+```
+
+---
+
 # 📈 Technical Highlights
 
-✔️ Microservices Architecture  
-✔️ REST Communication  
-✔️ OpenFeign Integration  
-✔️ JWT Authentication  
-✔️ Spring Security  
-✔️ Domain-Driven Structure  
-✔️ Clean Code  
-✔️ SOLID Principles  
-✔️ Automated Tests  
-✔️ Scalable Backend Design  
-✔️ Real Business Rules
+✔ Microservices Architecture  
+✔ JWT Authentication  
+✔ Spring Security  
+✔ OpenFeign Communication  
+✔ REST APIs  
+✔ Domain Isolation  
+✔ Clean Architecture  
+✔ SOLID Principles  
+✔ Automated Tests  
+✔ DTO Pattern  
+✔ Enterprise Backend Design  
+✔ Audit System  
+✔ Real Business Rules
 
 ---
 
 # 👨‍💻 Author
 
-**Silvio Rodrigues Vieira Filho**
+## Silvio Rodrigues Vieira Filho
 
-Backend Developer focused on Java & Spring Boot ecosystem.
+Backend Developer focused on:
 
-Project created for backend architecture studies and professional portfolio.
+- Java
+- Spring Boot
+- Microservices
+- REST APIs
+- Security
+- Backend Architecture
+
+This project was created for professional portfolio and backend architecture studies.
+
+---
+
+# ⭐ Future Improvements
+
+- Docker support
+- API Gateway
+- Service Discovery
+- PostgreSQL integration
+- Kafka event streaming
+- CI/CD pipeline
+- Kubernetes deployment
+- Observability & Monitoring
