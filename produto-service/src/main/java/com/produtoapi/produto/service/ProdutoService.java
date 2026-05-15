@@ -7,6 +7,8 @@ import com.produtoapi.exception.ProdutoNotFoundException;
 import com.produtoapi.historicoproduto.client.HistoricoClient;
 import com.produtoapi.historicoproduto.service.HistoricoIntegrationService;
 import com.produtoapi.historicoproduto.enums.TipoEvento;
+import com.produtoapi.produto.dto.ProdutoEventoDTO;
+import com.produtoapi.produto.producer.ProdutoProducer;
 import com.produtoapi.produto.specification.ProdutoSpecification;
 import com.produtoapi.produto.domain.Produto;
 import com.produtoapi.produto.domain.ProdutoDomainService;
@@ -34,6 +36,7 @@ public class ProdutoService {
     private final ProdutoFactory factory;
     private final ProdutoDomainService domain;
 
+    private final ProdutoProducer producer;
     private final HistoricoIntegrationService historicoIntegrationService;
 
     public List<ProdutoResponseDTO> listarTodos() {
@@ -43,9 +46,7 @@ public class ProdutoService {
                 .toList();
     }
 
-    public ProdutoResponseDTO salvar(
-            ProdutoRequestDTO dto
-    ) {
+    public ProdutoResponseDTO salvar(ProdutoRequestDTO dto) {
 
         Optional<Produto> produtoExistente =
                 repository.findByNomeAndPrecoAndStatus(
@@ -54,8 +55,7 @@ public class ProdutoService {
                         dto.getStatus()
                 );
 
-        boolean novoProduto =
-                produtoExistente.isEmpty();
+        boolean novoProduto = produtoExistente.isEmpty();
 
         int quantidadeAnterior =
                 produtoExistente
@@ -66,19 +66,22 @@ public class ProdutoService {
                 .map(p -> atualizarExistente(p, dto))
                 .orElseGet(() -> criarNovo(dto));
 
-        Produto produtoSalvo =
-                repository.save(produto);
+        Produto produtoSalvo = repository.save(produto);
 
-        historicoIntegrationService.registrarEvento(
+        ProdutoEventoDTO evento = ProdutoEventoDTO.builder()
+                .produtoId(produtoSalvo.getId())
+                .nome(produtoSalvo.getNome())
+                .preco(produtoSalvo.getPreco())
+                .quantidadeAnterior(quantidadeAnterior)
+                .quantidadeNova(produtoSalvo.getQuantidade())
+                .tipoEvento(
+                        novoProduto
+                                ? TipoEvento.PRODUTO_CRIADO
+                                : TipoEvento.PRODUTO_ATUALIZADO
+                )
+                .build();
 
-                produtoSalvo,
-
-                novoProduto
-                        ? TipoEvento.PRODUTO_CRIADO
-                        : TipoEvento.PRODUTO_ATUALIZADO,
-
-                quantidadeAnterior
-        );
+        producer.enviarEvento(evento);
 
         return mapper.toDTO(produtoSalvo);
     }

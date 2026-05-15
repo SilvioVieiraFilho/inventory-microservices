@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:16
     container_name: postgres-db
+    restart: always
 
     environment:
       POSTGRES_USER: postgres
@@ -19,9 +20,61 @@ services:
     networks:
       - backend-network
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+    ports:
+      - "2181:2181"
+
+    networks:
+      - backend-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+
+    depends_on:
+      - zookeeper
+
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+
+    environment:
+      KAFKA_BROKER_ID: 1
+
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093
+
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://host.docker.internal:9093
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+    networks:
+      - backend-network
+
   produto-service:
     build: ../produto-service
     container_name: produto-service
+    restart: on-failure
 
     ports:
       - "8080:8080"
@@ -31,10 +84,16 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 123456
 
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
       JWT_SECRET: minha-chave-secreta-super-forte-123456
 
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+      kafka:
+        condition: service_started
 
     networks:
       - backend-network
@@ -42,6 +101,7 @@ services:
   historico-service:
     build: ../historico-service
     container_name: historico-service
+    restart: on-failure
 
     ports:
       - "8081:8081"
@@ -51,10 +111,16 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 123456
 
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
       JWT_SECRET: minha-chave-secreta-super-forte-123456
 
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+      kafka:
+        condition: service_started
 
     networks:
       - backend-network

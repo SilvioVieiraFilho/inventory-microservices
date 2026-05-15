@@ -32,14 +32,20 @@ public class HistoricoController {
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<HistoricoProdutoResponseDTO>> listaPorID(@PathVariable Long id) {
+    @GetMapping("/produto/{produtoId}")
+    public ResponseEntity<ApiResponse<HistoricoProdutoResponseDTO>>
+    buscarPorProdutoId(@PathVariable Long produtoId) {
 
-        HistoricoProdutoResponseDTO historico = historicoProdutoService.listarPorid(id);
-        ApiResponse<HistoricoProdutoResponseDTO> response = new ApiResponse<>("Sua busca por id foi requisitada com sucesso", historico);
+        HistoricoProdutoResponseDTO historico =
+                historicoProdutoService.buscarPorProdutoId(produtoId);
+
+        ApiResponse<HistoricoProdutoResponseDTO> response =
+                new ApiResponse<>(
+                        "Histórico encontrado com sucesso",
+                        historico
+                );
 
         return ResponseEntity.ok(response);
-
     }
 
 }

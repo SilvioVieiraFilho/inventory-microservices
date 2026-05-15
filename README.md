@@ -1,4 +1,4 @@
-# 🚀 Inventory Microservices System
+# 🚀 **Inventory Microservices System (Event-Driven + Kafka)**
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=240&section=header&text=Inventory%20Microservices%20System&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=38" />
@@ -9,9 +9,9 @@
 <img src="https://img.shields.io/badge/Java-21-red?style=for-the-badge&logo=openjdk" />
 <img src="https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot" />
 <img src="https://img.shields.io/badge/Microservices-Architecture-blueviolet?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Event--Driven-Kafka-orange?style=for-the-badge&logo=apachekafka" />
 <img src="https://img.shields.io/badge/Spring_Security-JWT-success?style=for-the-badge" />
 <img src="https://img.shields.io/badge/OpenFeign-REST_Communication-blue?style=for-the-badge" />
-<img src="https://img.shields.io/badge/JUnit5-Tests-orange?style=for-the-badge" />
 <img src="https://img.shields.io/badge/PostgreSQL-Database-316192?style=for-the-badge&logo=postgresql" />
 <img src="https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker" />
 
@@ -21,53 +21,25 @@
 
 # 📌 About The Project
 
-Enterprise backend application based on **Microservices Architecture** using:
+Enterprise backend system based on **Microservices + Event-Driven Architecture** using:
 
 - Java 21
 - Spring Boot 3
+- Kafka (Event Streaming)
 - Spring Security + JWT
 - OpenFeign
-- Spring Data JPA
 - PostgreSQL
 - Docker & Docker Compose
-- Automated Testing
+- Clean Architecture & SOLID principles
 
-The project simulates a real-world backend ecosystem focused on:
+The system simulates a real-world distributed backend where services communicate via:
 
-✔ Scalable architecture  
-✔ Service isolation  
-✔ REST communication  
-✔ Authentication & Authorization  
-✔ Business rules validation  
-✔ Event tracking  
-✔ Clean Code  
-✔ SOLID principles  
-✔ Enterprise backend patterns  
-✔ Containerized infrastructure
+- REST (synchronous)
+- Kafka (asynchronous events)
 
 ---
 
-# 🗄️ Database & Infrastructure
-
-This project was upgraded from H2 to **PostgreSQL** and fully containerized with Docker.
-
-## PostgreSQL
-
-- Persistent relational database
-- Shared between microservices
-- Production-ready configuration
-
-## Docker
-
-Full orchestration using Docker Compose:
-
-- postgres-db
-- produto-service
-- historico-service
-
----
-
-# 🏗️ Architecture Overview
+# 🧠 Architecture Overview
 
 ```mermaid
 flowchart TB
@@ -79,206 +51,254 @@ subgraph SERVICES
     HIST[historico-service]
 end
 
+subgraph STREAM
+    KAFKA[Kafka Broker]
+    TOPIC[(historico-produto-topic)]
+end
+
 DB[(PostgreSQL)]
 
-DOCKER[Docker Compose]
-
-JWT[JWT Security Filter]
-
 CLIENT --> PROD
-PROD --> HIST
+
+PROD -->|REST| HIST
+PROD -->|EVENT PRODUCER| KAFKA
+KAFKA --> TOPIC
+TOPIC -->|CONSUMER| HIST
 
 PROD --> DB
 HIST --> DB
-
-PROD --> JWT
-HIST --> JWT
-
-DOCKER --> PROD
-DOCKER --> HIST
-DOCKER --> DB
 ```
 
-# 🧩 Microservices
+---
+
+# ⚡ Event-Driven Flow (Kafka)
+
+## 📤 1. Product Creation / Update
+
+When a product is created or updated:
+
+```txt
+produto-service
+   ↓
+Creates ProdutoEventoDTO
+   ↓
+Publishes event to Kafka topic
+   ↓
+historico-produto-topic
+```
+
+---
+
+## 📥 2. Event Consumption
+
+```txt
+Kafka Topic
+   ↓
+historico-service (Consumer)
+   ↓
+HistoricoConsumer.consumir()
+   ↓
+Transforms DTO → Entity
+   ↓
+Persists in PostgreSQL
+```
+
+---
+
+## 🧾 3. Final Result
+
+```txt
+Product Action → Event → Kafka → Historico Saved
+```
+
+---
+
+# 📦 Microservices
 
 ## 📦 produto-service
 
-Responsável por gerenciamento de produtos e regras de negócio.
+Responsible for product lifecycle.
 
 ### Features
 
-- CRUD de produtos
-- Controle de estoque
-- Merge de produtos duplicados
-- Filtros dinâmicos
-- Integração com histórico via OpenFeign
-- Segurança JWT
-- Autorização por role
+- CRUD operations
+- Stock management
+- Business validation
+- Kafka event producer
+- OpenFeign integration
+- JWT security
+
+### Kafka Producer
+
+```txt
+Publishes:
+ProdutoEventoDTO
+→ historico-produto-topic
+```
 
 ---
 
 ## 🕘 historico-service
 
-Responsável por auditoria e eventos.
+Responsible for event tracking and audit.
 
 ### Features
 
-- Registro de eventos de produtos
-- Auditoria de estoque
-- Persistência de histórico
-- Consumo de eventos via REST
-- Segurança JWT
+- Kafka consumer
+- Event persistence
+- Product history tracking
+- Audit logs
+- PostgreSQL storage
+
+### Kafka Consumer
+
+```java
+@KafkaListener(topics = "historico-produto-topic")
+public void consumir(ProdutoEventoDTO dto)
+```
 
 ---
 
-# 🔗 Comunicação entre serviços
+# 🔗 Communication Model
 
-- REST APIs
-- OpenFeign
-
-Fluxo:
+## Synchronous (REST)
 
 ```txt
 produto-service → historico-service
+(OpenFeign)
 ```
 
----
-
-# 🔐 Security Layer
-
-- Spring Security
-- JWT Authentication
-- Stateless session
-- Authorization filters
-- Role-based access
-
----
-
-# 🧠 Business Rules
-
-## Produtos
-
-- Produtos duplicados são automaticamente mesclados
-- Atualizações geram eventos no histórico
-- Controle de estoque validado
-
-## Usuários
-
-- Usuários bloqueados não autenticam
-- Token JWT obrigatório
-- Acesso baseado em roles
-
----
-
-# 🛠️ Technologies
-
-| Tech            | Purpose                    |
-| --------------- | -------------------------- |
-| Java 21         | Language                   |
-| Spring Boot 3   | Framework                  |
-| Spring Security | Security                   |
-| JWT             | Authentication             |
-| OpenFeign       | Microservice communication |
-| Spring Data JPA | Persistence                |
-| Hibernate       | ORM                        |
-| PostgreSQL      | Database                   |
-| Docker          | Containerization           |
-| Docker Compose  | Orchestration              |
-| MapStruct       | DTO mapping                |
-| JUnit 5         | Testing                    |
-| Mockito         | Mocking                    |
-
----
-
-# 📂 Project Structure
+## Asynchronous (Kafka)
 
 ```txt
-inventory-microservices/
-│
-├── produto-service/
-├── historico-service/
-├── docker-compose.yml
-├── docs/
-│   ├── Arquitetura/
-│   ├── Postman/
-│   └── imagens/
-└── README.md
+produto-service → Kafka → historico-service
 ```
 
 ---
 
-# 🧪 Tests
+# 🧾 Event Model
 
-- Unit tests
-- Service tests
-- Repository tests
-- Security tests (JWT)
-- Mockito mocks
-- Business rules tests
+## ProdutoEventoDTO
+
+```java
+private Long produtoId;
+private String nome;
+private Double preco;
+private Integer quantidadeAnterior;
+private Integer quantidadeNova;
+private TipoEvento tipoEvento;
+```
 
 ---
 
-# ▶️ Running The Project
+## TipoEvento
 
-## 🐳 Docker (Recommended)
+```java
+CRIADO
+ATUALIZADO
+DELETADO
+```
+
+---
+
+# 🗄️ Database
+
+- PostgreSQL (shared or separated per service)
+- Event persistence in `historico-service`
+
+---
+
+# 🔐 Security
+
+- JWT Authentication
+- Stateless architecture
+- Role-based access control
+- Secure REST endpoints
+
+---
+
+# 🧩 Business Rules
+
+## Produto Service
+
+- Duplicate products are merged
+- Stock updates generate Kafka events
+- Business validation enforced
+
+## Historico Service
+
+- Only persists valid events
+- Ignores corrupted messages
+- Stores full audit trail
+
+---
+
+# 🧠 Technologies
+
+| Tech          | Role                  |
+| ------------- | --------------------- |
+| Java 21       | Core language         |
+| Spring Boot 3 | Framework             |
+| Kafka         | Event streaming       |
+| PostgreSQL    | Database              |
+| Docker        | Containerization      |
+| JWT           | Security              |
+| OpenFeign     | Service communication |
+| JPA/Hibernate | ORM                   |
+
+---
+
+# 🐳 Docker Architecture
+
+```txt
+services:
+  - produto-service
+  - historico-service
+  - kafka
+  - zookeeper
+  - postgres
+```
+
+---
+
+# ▶️ Running the System
+
+## Docker
 
 ```bash
 docker compose up --build
 ```
 
-## 🧱 Manual run
-
-```bash
-cd produto-service
-./mvnw spring-boot:run
-```
-
-```bash
-cd historico-service
-./mvnw spring-boot:run
-```
-
 ---
 
-# 🔑 Authentication
-
-```http
-POST /auth/login
-```
-
-```json
-{
-  "message": "Login realizado com sucesso",
-  "data": {
-    "token": "JWT_TOKEN",
-    "email": "user@email.com",
-    "role": "USER"
-  }
-}
-```
-
----
-
-# 📬 Postman Collection
-
-Local:
+# 📡 Kafka Topic
 
 ```txt
-docs/Postman/
+historico-produto-topic
 ```
 
 ---
 
 # 📈 Highlights
 
-✔ Microservices Architecture
-✔ Docker + PostgreSQL
-✔ JWT Security
-✔ OpenFeign Communication
-✔ Clean Architecture
-✔ SOLID Principles
-✔ Event-driven tracking
-✔ Production-ready structure
+✔ Microservices architecture
+✔ Event-driven system (Kafka)
+✔ REST + Async hybrid communication
+✔ Audit trail system
+✔ Scalable architecture
+✔ Production-style backend design
+
+---
+
+# 🚀 Future Improvements
+
+- API Gateway (Spring Cloud Gateway)
+- Eureka Service Discovery
+- Schema Registry (Kafka Avro)
+- Dead Letter Queue (DLQ)
+- Observability (Prometheus + Grafana)
+- Kubernetes deployment
+- CI/CD pipeline
 
 ---
 
@@ -291,21 +311,5 @@ Backend Developer focused on:
 - Java
 - Spring Boot
 - Microservices
-- Security
-- Distributed Systems
-
----
-
-# ⭐ Future Improvements
-
-- API Gateway
-- Service Discovery (Eureka)
-- Kafka Event Streaming
-- CI/CD Pipeline
-- Kubernetes Deployment
-- Observability (Prometheus + Grafana)
-
-```
-
----
-```
+- Event-driven systems
+- Distributed architecture

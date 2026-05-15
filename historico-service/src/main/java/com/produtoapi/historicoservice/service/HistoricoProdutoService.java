@@ -43,12 +43,15 @@ public class HistoricoProdutoService {
 
         return mapper.toDTO(historicoSalvo);
 
-
     }
-    public  HistoricoProdutoResponseDTO listarPorid (Long id ){
+    public HistoricoProdutoResponseDTO buscarPorProdutoId(Long produtoId) {
 
+        HistoricoProduto historico =
+                repository.findByProdutoId(produtoId)
+                        .orElseThrow(() ->
+                                new HistoricoNotFoundException(produtoId));
 
-        return mapper.toDTO(buscarOuFalhar(id));
+        return mapper.toDTO(historico);
     }
 
 
