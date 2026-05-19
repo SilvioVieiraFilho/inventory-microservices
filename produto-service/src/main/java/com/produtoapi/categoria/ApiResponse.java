@@ -1,0 +1,22 @@
+package com.produtoapi.categoria;
+
+import lombok.Getter;
+
+@Getter
+public class ApiResponse<T> {
+
+    private String message;
+    private T data;
+
+
+    public ApiResponse(String message, T data) {
+        this.message = message;
+        this.data = data;
+    }
+
+    public ApiResponse(String message, T data, String token) {
+        this.message = message;
+        this.data = data;
+    }
+
+}

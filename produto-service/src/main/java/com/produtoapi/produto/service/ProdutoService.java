@@ -3,6 +3,8 @@ package com.produtoapi.produto.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.produtoapi.categoria.domain.Categoria;
+import com.produtoapi.categoria.repository.CategoriaRepository;
 import com.produtoapi.exception.ProdutoNotFoundException;
 import com.produtoapi.historicoproduto.client.HistoricoClient;
 import com.produtoapi.historicoproduto.service.HistoricoIntegrationService;
@@ -37,6 +39,8 @@ public class ProdutoService {
     private final ProdutoDomainService domain;
 
     private final ProdutoProducer producer;
+    private final CategoriaRepository categoriaRepository;
+
     private final HistoricoIntegrationService historicoIntegrationService;
 
     public List<ProdutoResponseDTO> listarTodos() {
@@ -66,6 +70,13 @@ public class ProdutoService {
                 .map(p -> atualizarExistente(p, dto))
                 .orElseGet(() -> criarNovo(dto));
 
+        Categoria categoria = categoriaRepository
+                .findById(dto.getCategoria_id())
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+
+        produto.setCategoria(categoria);
+
+
         Produto produtoSalvo = repository.save(produto);
 
         ProdutoEventoDTO evento = ProdutoEventoDTO.builder()
@@ -79,7 +90,13 @@ public class ProdutoService {
                                 ? TipoEvento.PRODUTO_CRIADO
                                 : TipoEvento.PRODUTO_ATUALIZADO
                 )
+
+
                 .build();
+
+
+
+
 
         producer.enviarEvento(evento);
 

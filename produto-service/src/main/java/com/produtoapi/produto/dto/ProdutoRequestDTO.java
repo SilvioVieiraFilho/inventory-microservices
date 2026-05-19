@@ -31,4 +31,8 @@ public class ProdutoRequestDTO {
 	@NotNull(message = "Status é obrigatório")
 	private ProdutoStatus status;
 
+
+	@NotNull(message = "cateogira nao pode ser null")
+	private Long categoria_id;
+
 }

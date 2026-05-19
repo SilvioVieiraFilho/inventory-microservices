@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableFeignClients(basePackages = "com.produtoapi")
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.produtoapi")
 public class HistoricoServiceApplication {
 
 	public static void main(String[] args) {

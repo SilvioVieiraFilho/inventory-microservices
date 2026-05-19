@@ -24,11 +24,17 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/categorias/**").permitAll()
                         .requestMatchers("/eventos/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/produtos/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                                .requestMatchers("/swagger-ui.html/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+
+                                .anyRequest().authenticated()
+
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers ->

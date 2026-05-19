@@ -1,4 +1,4 @@
-# 🚀 **Inventory Microservices System (Event-Driven + Kafka)**
+# 🚀 Inventory Microservices System (Event-Driven + Kafka)
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d6efd,100:6610f2&height=240&section=header&text=Inventory%20Microservices%20System&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=38" />
@@ -25,17 +25,20 @@ Enterprise backend system based on **Microservices + Event-Driven Architecture**
 
 - Java 21
 - Spring Boot 3
-- Kafka (Event Streaming)
+- Apache Kafka
 - Spring Security + JWT
 - OpenFeign
 - PostgreSQL
 - Docker & Docker Compose
-- Clean Architecture & SOLID principles
+- Clean Architecture
+- SOLID Principles
 
-The system simulates a real-world distributed backend where services communicate via:
+The system simulates a real-world inventory management platform where products are organized into categories and all important operations are tracked through asynchronous events.
 
-- REST (synchronous)
-- Kafka (asynchronous events)
+Communication happens through:
+
+- REST APIs (synchronous)
+- Kafka Events (asynchronous)
 
 ---
 
@@ -44,71 +47,95 @@ The system simulates a real-world distributed backend where services communicate
 ```mermaid
 flowchart TB
 
-CLIENT[Client / Postman / Frontend]
+CLIENT[Client / Frontend / Postman]
 
-subgraph SERVICES
+subgraph PRODUCT_SERVICE
     PROD[produto-service]
-    HIST[historico-service]
+
+    CAT[Categoria Module]
+    PRODUCT[Produto Module]
+
+    CAT --> PRODUCT
 end
 
-subgraph STREAM
+subgraph EVENT_STREAM
     KAFKA[Kafka Broker]
     TOPIC[(historico-produto-topic)]
 end
 
-DB[(PostgreSQL)]
+HIST[historico-service]
+
+DB1[(PostgreSQL)]
+DB2[(PostgreSQL)]
 
 CLIENT --> PROD
 
-PROD -->|REST| HIST
-PROD -->|EVENT PRODUCER| KAFKA
-KAFKA --> TOPIC
-TOPIC -->|CONSUMER| HIST
+PROD --> DB1
 
-PROD --> DB
-HIST --> DB
+PROD -->|REST| HIST
+
+PROD -->|Publish Event| KAFKA
+
+KAFKA --> TOPIC
+
+TOPIC -->|Consume Event| HIST
+
+HIST --> DB2
 ```
 
 ---
 
 # ⚡ Event-Driven Flow (Kafka)
 
-## 📤 1. Product Creation / Update
+## 📤 Product Operations
 
-When a product is created or updated:
+Whenever a product is:
+
+- Created
+- Updated
+- Deleted
+- Stock Updated
+
+The product service publishes an event.
 
 ```txt
 produto-service
-   ↓
-Creates ProdutoEventoDTO
-   ↓
-Publishes event to Kafka topic
-   ↓
+    ↓
+ProdutoEventoDTO
+    ↓
+Kafka Producer
+    ↓
 historico-produto-topic
 ```
 
 ---
 
-## 📥 2. Event Consumption
+## 📥 Event Consumption
 
 ```txt
 Kafka Topic
-   ↓
-historico-service (Consumer)
-   ↓
-HistoricoConsumer.consumir()
-   ↓
-Transforms DTO → Entity
-   ↓
-Persists in PostgreSQL
+    ↓
+historico-service
+    ↓
+HistoricoConsumer
+    ↓
+Entity Mapping
+    ↓
+PostgreSQL
 ```
 
 ---
 
-## 🧾 3. Final Result
+## 🧾 Final Result
 
 ```txt
-Product Action → Event → Kafka → Historico Saved
+Product Action
+      ↓
+Kafka Event
+      ↓
+History Service
+      ↓
+Audit Record Saved
 ```
 
 ---
@@ -117,61 +144,115 @@ Product Action → Event → Kafka → Historico Saved
 
 ## 📦 produto-service
 
-Responsible for product lifecycle.
+Responsible for inventory management.
 
 ### Features
 
-- CRUD operations
+- Product CRUD
+- Category CRUD
+- Product/category association
+- Business validations
 - Stock management
-- Business validation
-- Kafka event producer
-- OpenFeign integration
-- JWT security
-
-### Kafka Producer
-
-```txt
-Publishes:
-ProdutoEventoDTO
-→ historico-produto-topic
-```
+- JWT Authentication
+- OpenFeign Integration
+- Kafka Producer
 
 ---
 
 ## 🕘 historico-service
 
-Responsible for event tracking and audit.
+Responsible for audit and tracking.
 
 ### Features
 
-- Kafka consumer
-- Event persistence
-- Product history tracking
-- Audit logs
-- PostgreSQL storage
+- Kafka Consumer
+- Event Persistence
+- Audit Logs
+- Product History Tracking
+- PostgreSQL Storage
 
-### Kafka Consumer
+---
+
+# 🏷️ Category Module
+
+The category module allows inventory organization.
+
+### Features
+
+- Create category
+- Update category
+- Delete category
+- List categories
+- Search by ID
+- Enable/Disable categories
+- Associate products with categories
+
+### Category Status
 
 ```java
-@KafkaListener(topics = "historico-produto-topic")
-public void consumir(ProdutoEventoDTO dto)
+ATIVA
+INATIVA
+```
+
+### Example Category
+
+```java
+public class Categoria {
+
+    private Long id;
+    private String nome;
+    private StatusCategoria status;
+
+}
+```
+
+---
+
+# 📦 Product Module
+
+Products belong to a category.
+
+### Example Product
+
+```java
+public class Produto {
+
+    private Long id;
+    private String nome;
+    private Double preco;
+    private Integer quantidade;
+
+    private Categoria categoria;
+
+}
 ```
 
 ---
 
 # 🔗 Communication Model
 
-## Synchronous (REST)
+## REST Communication
 
 ```txt
-produto-service → historico-service
-(OpenFeign)
+produto-service
+       ↓
+OpenFeign
+       ↓
+historico-service
 ```
 
-## Asynchronous (Kafka)
+---
+
+## Kafka Communication
 
 ```txt
-produto-service → Kafka → historico-service
+produto-service
+       ↓
+Kafka Producer
+       ↓
+historico-produto-topic
+       ↓
+historico-service
 ```
 
 ---
@@ -203,48 +284,83 @@ DELETADO
 
 # 🗄️ Database
 
-- PostgreSQL (shared or separated per service)
-- Event persistence in `historico-service`
+PostgreSQL is used for persistence.
+
+### produto-service
+
+Stores:
+
+- Products
+- Categories
+
+### historico-service
+
+Stores:
+
+- Product History
+- Audit Events
 
 ---
 
 # 🔐 Security
 
-- JWT Authentication
-- Stateless architecture
-- Role-based access control
-- Secure REST endpoints
+Authentication and authorization are implemented using:
+
+- Spring Security
+- JWT
+- Stateless Sessions
+- Endpoint Protection
 
 ---
 
 # 🧩 Business Rules
 
-## Produto Service
+## Categoria
 
-- Duplicate products are merged
-- Stock updates generate Kafka events
-- Business validation enforced
+- Category names must be unique.
+- Inactive categories cannot receive new products.
+- Category status is validated before product association.
 
-## Historico Service
+## Produto
 
-- Only persists valid events
-- Ignores corrupted messages
-- Stores full audit trail
+- Duplicate products are merged.
+- Stock updates generate Kafka events.
+- Every product belongs to a category.
+- Product validations are enforced.
+
+## Histórico
+
+- Only valid events are persisted.
+- Invalid messages are ignored.
+- Full audit trail is maintained.
+
+---
+
+# 📡 API Domains
+
+```txt
+/auth
+/produtos
+/categorias
+/historicos
+```
 
 ---
 
 # 🧠 Technologies
 
-| Tech          | Role                  |
-| ------------- | --------------------- |
-| Java 21       | Core language         |
-| Spring Boot 3 | Framework             |
-| Kafka         | Event streaming       |
-| PostgreSQL    | Database              |
-| Docker        | Containerization      |
-| JWT           | Security              |
-| OpenFeign     | Service communication |
-| JPA/Hibernate | ORM                   |
+| Technology | Purpose |
+|------------|----------|
+| Java 21 | Programming Language |
+| Spring Boot 3 | Backend Framework |
+| Spring Security | Authentication |
+| JWT | Authorization |
+| Spring Data JPA | ORM |
+| PostgreSQL | Database |
+| Kafka | Event Streaming |
+| OpenFeign | Service Communication |
+| Docker | Containerization |
+| Maven | Dependency Management |
 
 ---
 
@@ -252,16 +368,16 @@ DELETADO
 
 ```txt
 services:
-  - produto-service
-  - historico-service
-  - kafka
-  - zookeeper
-  - postgres
+ ├── produto-service
+ ├── historico-service
+ ├── postgres
+ ├── kafka
+ └── zookeeper
 ```
 
 ---
 
-# ▶️ Running the System
+# ▶️ Running The System
 
 ## Docker
 
@@ -281,24 +397,45 @@ historico-produto-topic
 
 # 📈 Highlights
 
-✔ Microservices architecture
-✔ Event-driven system (Kafka)
-✔ REST + Async hybrid communication
-✔ Audit trail system
-✔ Scalable architecture
-✔ Production-style backend design
+✔ Microservices Architecture
+
+✔ Event-Driven Design
+
+✔ Apache Kafka Integration
+
+✔ JWT Authentication
+
+✔ Product Management
+
+✔ Category Management
+
+✔ Audit Trail System
+
+✔ OpenFeign Communication
+
+✔ Dockerized Environment
+
+✔ Clean Architecture Principles
+
+✔ SOLID Principles
+
+✔ Production-Style Backend
 
 ---
 
 # 🚀 Future Improvements
 
-- API Gateway (Spring Cloud Gateway)
+- API Gateway
+- Spring Cloud Gateway
 - Eureka Service Discovery
-- Schema Registry (Kafka Avro)
+- Kafka Schema Registry
 - Dead Letter Queue (DLQ)
-- Observability (Prometheus + Grafana)
-- Kubernetes deployment
-- CI/CD pipeline
+- Redis Cache
+- Prometheus
+- Grafana
+- Kubernetes
+- CI/CD Pipeline
+- Centralized Logging
 
 ---
 
@@ -310,6 +447,8 @@ Backend Developer focused on:
 
 - Java
 - Spring Boot
+- Kafka
 - Microservices
-- Event-driven systems
-- Distributed architecture
+- Event-Driven Systems
+- Distributed Architectures
+- Cloud-Native Applications

@@ -1,4 +1,5 @@
 package com.produtoapi.produto.domain;
+import com.produtoapi.categoria.domain.Categoria;
 import com.produtoapi.produto.enums.ProdutoStatus;
 import com.produtoapi.exception.BusinessException;
 import com.produtoapi.historicoproduto.domain.HistoricosProdutos;
@@ -36,9 +37,9 @@ public class Produto {
 	@Builder.Default
 	private List<HistoricosProdutos> historicos = new ArrayList<>();
 
-	// =====================================================
-	// 🔥 ADICIONAR QUANTIDADE
-	// =====================================================
+@ManyToOne(fetch = FetchType.LAZY)
+private Categoria categoria;
+
 	public void adicionarQuantidade(int quantidade) {
 
 		if (quantidade <= 0) {
@@ -53,9 +54,7 @@ public class Produto {
 		aplicarRegraEstoque();
 	}
 
-	// =====================================================
-	// 🔥 DEFINIR QUANTIDADE DIRETA
-	// =====================================================
+
 	public void definirQuantidade(int novaQuantidade) {
 
 		if (novaQuantidade < 0) {
@@ -71,18 +70,12 @@ public class Produto {
 		aplicarRegraEstoque();
 	}
 
-	// =====================================================
-	// 🔥 REGRA DE ESTOQUE (ÚNICA FONTE DA VERDADE)
-	// =====================================================
 	public void aplicarRegraEstoque() {
 		this.status = (this.quantidade == 0)
 				? ProdutoStatus.ESGOTADO
 				: ProdutoStatus.ATIVO;
 	}
 
-	// =====================================================
-	// 🔥 VALIDAÇÃO DE NEGÓCIO
-	// =====================================================
 	public void validar() {
 
 		if (status == ProdutoStatus.ATIVO && quantidade == 0) {
@@ -94,9 +87,7 @@ public class Produto {
 		}
 	}
 
-	// =====================================================
-	// 🔥 HISTÓRICO
-	// =====================================================
+
 	private void registrarHistorico(int anterior, int nova, int diferenca) {
 
 		if (historicos == null) {
