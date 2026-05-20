@@ -32,12 +32,12 @@ public class HistoricoController {
     }
 
 
-    @GetMapping("/produto/{produtoId}")
+    @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<HistoricoProdutoResponseDTO>>
-    buscarPorProdutoId(@PathVariable Long produtoId) {
+    buscarPorId(@PathVariable Long id) {
 
         HistoricoProdutoResponseDTO historico =
-                historicoProdutoService.buscarPorProdutoId(produtoId);
+                historicoProdutoService.buscarPorId(id);
 
         ApiResponse<HistoricoProdutoResponseDTO> response =
                 new ApiResponse<>(
@@ -47,5 +47,4 @@ public class HistoricoController {
 
         return ResponseEntity.ok(response);
     }
-
 }

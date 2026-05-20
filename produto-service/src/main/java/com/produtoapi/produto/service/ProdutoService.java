@@ -1,12 +1,9 @@
 package com.produtoapi.produto.service;
-
 import java.util.List;
 import java.util.Optional;
-
 import com.produtoapi.categoria.domain.Categoria;
 import com.produtoapi.categoria.repository.CategoriaRepository;
 import com.produtoapi.exception.ProdutoNotFoundException;
-import com.produtoapi.historicoproduto.client.HistoricoClient;
 import com.produtoapi.historicoproduto.service.HistoricoIntegrationService;
 import com.produtoapi.historicoproduto.enums.TipoEvento;
 import com.produtoapi.produto.dto.ProdutoEventoDTO;
@@ -17,13 +14,12 @@ import com.produtoapi.produto.domain.ProdutoDomainService;
 import com.produtoapi.produto.domain.ProdutoFactory;
 import com.produtoapi.produto.dto.ProdutoResponseDTO;
 import com.produtoapi.produto.mapper.ProdutoMapper;
-
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import com.produtoapi.produto.repository.ProdutoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
 import com.produtoapi.produto.dto.ProdutoRequestDTO;
 import com.produtoapi.produto.enums.ProdutoStatus;
 import com.produtoapi.exception.BusinessException;
@@ -32,7 +28,7 @@ import com.produtoapi.exception.BusinessException;
 @RequiredArgsConstructor
 public class ProdutoService {
 
-    private final HistoricoClient historicoClient;
+
     private final ProdutoRepository repository;
     private final ProdutoMapper mapper;
     private final ProdutoFactory factory;
@@ -43,11 +39,26 @@ public class ProdutoService {
 
     private final HistoricoIntegrationService historicoIntegrationService;
 
-    public List<ProdutoResponseDTO> listarTodos() {
-        return repository.findAll()
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+    public Page<ProdutoResponseDTO> listar(String nome, Pageable pageable) {
+
+        Specification<Produto> spec = Specification.where(null);
+
+        if (nome != null && !nome.isBlank()) {
+            spec = spec.and(ProdutoSpecification.nomeContains(nome));
+        }
+
+
+
+        Page<Produto> page = repository.findAll(spec, pageable);
+
+//        return page.map(mapper::toDTO);
+
+        return page.map(p -> {
+            System.out.println("Produto: " + p.getNome());
+            return new ProdutoResponseDTO(p);
+
+        });
+
     }
 
     public ProdutoResponseDTO salvar(ProdutoRequestDTO dto) {
@@ -70,14 +81,23 @@ public class ProdutoService {
                 .map(p -> atualizarExistente(p, dto))
                 .orElseGet(() -> criarNovo(dto));
 
+
+
+
+
+        if (dto.getCategoria_id() == null) {
+            throw new IllegalArgumentException("Categoria é obrigatória");
+        }
+
         Categoria categoria = categoriaRepository
                 .findById(dto.getCategoria_id())
-                .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
+                .orElseThrow(() -> new BusinessException("Categoria não encontrada"));
 
         produto.setCategoria(categoria);
 
-
         Produto produtoSalvo = repository.save(produto);
+
+
 
         ProdutoEventoDTO evento = ProdutoEventoDTO.builder()
                 .produtoId(produtoSalvo.getId())
@@ -90,7 +110,6 @@ public class ProdutoService {
                                 ? TipoEvento.PRODUTO_CRIADO
                                 : TipoEvento.PRODUTO_ATUALIZADO
                 )
-
 
                 .build();
 
@@ -119,19 +138,25 @@ public class ProdutoService {
         }
 
 
-        public ProdutoResponseDTO atualizarProduto (Long id, ProdutoRequestDTO dto){
+    public ProdutoResponseDTO atualizarProduto(Long id, ProdutoRequestDTO dto) {
 
-            Produto produto = buscarOuFalhar(id);
+        Produto produto = buscarOuFalhar(id);
 
-            domain.atualizarDadosBasicos(
-                    produto,
-                    dto.getNome(),
-                    dto.getPreco(),
-                    dto.getQuantidade()
-            );
+        produto.setNome(dto.getNome());
+        produto.setPreco(dto.getPreco());
+        produto.setQuantidade(dto.getQuantidade());
+        produto.setStatus(dto.getStatus());
 
-            return mapper.toDTO(repository.save(produto));
-        }
+        Categoria categoria = categoriaRepository
+                .findById(dto.getCategoria_id())
+                .orElseThrow(() ->
+                        new BusinessException("Categoria não encontrada"));
+
+        produto.setCategoria(categoria);
+
+        return mapper.toDTO(repository.save(produto));
+    }
+
 
 
         public ProdutoResponseDTO buscarPorId (Long id){

@@ -42,4 +42,17 @@ public class ProdutoSpecification {
 		};
 	}
 
+	public static Specification<Produto> nomeContains(String nome) {
+		return (root, query, cb) -> {
+			if (nome == null || nome.isBlank()) {
+				return cb.conjunction();
+			}
+
+			return cb.like(
+					cb.lower(root.get("nome")),
+					"%" + nome.toLowerCase() + "%"
+			);
+		};
+    }
+
 }

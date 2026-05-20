@@ -5,6 +5,10 @@ import java.util.List;
 import com.produtoapi.produto.service.ProdutoService;
 import com.produtoapi.produto.dto.ProdutoResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,11 +29,15 @@ public class ProdutoController {
 
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<List<ProdutoResponseDTO>>> listarTodos() {
+	public ResponseEntity<ApiResponse<Page<ProdutoResponseDTO>>> listarTodos(
+			@RequestParam(required = false) String nome,
+			@PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+			Pageable pageable) {
 
-		List<ProdutoResponseDTO> produto = serviceProduto.listarTodos();
+		Page<ProdutoResponseDTO> produto = serviceProduto.listar(nome, pageable);
 
-		ApiResponse<List<ProdutoResponseDTO>> response = new ApiResponse<>("Produtos listado com sucesso", produto);
+		ApiResponse<Page<ProdutoResponseDTO>> response =
+				new ApiResponse<>("Produtos listados com sucesso", produto);
 
 		return ResponseEntity.ok(response);
 	}

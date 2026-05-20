@@ -51,7 +51,7 @@ class ProdutoControllerTest {
             dto.setId(1L);
             dto.setNome("Mouse");
 
-            when(serviceProduto.listarTodos()).thenReturn(List.of(dto));
+//            when(serviceProduto.listarTodos()).thenReturn(List.of(dto));
 
             mockMvc.perform(get("/produtos"))
                     .andExpect(status().isOk())

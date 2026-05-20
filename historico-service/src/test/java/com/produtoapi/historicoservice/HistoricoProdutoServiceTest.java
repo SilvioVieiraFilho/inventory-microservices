@@ -238,7 +238,7 @@ class HistoricoProdutoServiceTest {
                     .thenReturn(responseDTO);
 
             HistoricoProdutoResponseDTO response =
-                    service.buscarPorProdutoId(id);
+                    service.buscarPorId(id);
 
             assertEquals(id, response.getId());
             assertEquals("Pilha", response.getNomeProduto());
@@ -257,7 +257,7 @@ class HistoricoProdutoServiceTest {
 
             assertThrows(
                     HistoricoNotFoundException.class,
-                    () -> service.buscarPorProdutoId(id));
+                    () -> service.buscarPorId(id));
 
             verify(repository, times(1)).findById(id);
             verify(mapper, never()).toDTO(any());

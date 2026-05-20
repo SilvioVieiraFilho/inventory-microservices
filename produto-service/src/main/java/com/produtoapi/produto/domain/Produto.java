@@ -5,8 +5,10 @@ import com.produtoapi.exception.BusinessException;
 import com.produtoapi.historicoproduto.domain.HistoricosProdutos;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Produto {
 
 	@Id
@@ -28,6 +31,8 @@ public class Produto {
 
 	private int quantidade;
 
+	@CreatedDate
+	private LocalDateTime createdAt;
 	private double preco;
 
 	@Enumerated(EnumType.STRING)
@@ -36,6 +41,9 @@ public class Produto {
 	@OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private List<HistoricosProdutos> historicos = new ArrayList<>();
+
+
+	@NotNull(message = "Categoria é obrigatória")
 
 @ManyToOne(fetch = FetchType.LAZY)
 private Categoria categoria;
@@ -103,18 +111,7 @@ private Categoria categoria;
 
 		historicos.add(h);
 	}
-	private void adicionarHistorico(int anterior, int nova, int diferenca) {
 
-		historicos.add(
-				HistoricosProdutos.builder()
-						.quantidadeAnterior(anterior)
-						.quantidadeNova(nova)
-						.diferenca(diferenca)
-						.dataRegistro(LocalDateTime.now())
-						.produto(this)
-						.build()
-		);
-	}
 
 	public void removerQuantidade(int quantidade) {
 
@@ -129,7 +126,7 @@ private Categoria categoria;
 		int anterior = this.quantidade;
 		this.quantidade -= quantidade;
 
-		adicionarHistorico(anterior, this.quantidade, -quantidade);
+		registrarHistorico(anterior, this.quantidade, -quantidade);
 
 		aplicarRegraEstoque();
 	}

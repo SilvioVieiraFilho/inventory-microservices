@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface HistoricoProdutoRepository extends JpaRepository<HistoricoProduto,Long> {
-    Optional<HistoricoProduto> findByProdutoId(Long produtoId);
-
     List<HistoricoProduto> findByDataRegistroBetween(LocalDateTime dataInicio,LocalDateTime dataFim);
 
 }

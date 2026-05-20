@@ -6,6 +6,7 @@ import com.produtoapi.categoria.enums.StatusCategoria;
 import com.produtoapi.categoria.repository.CategoriaRepository;
 import com.produtoapi.categoria.dto.CategoriaRequestDTO;
 import com.produtoapi.categoria.dto.CategoriaResponseDTO;
+import com.produtoapi.exception.BusinessException;
 import com.produtoapi.produto.dto.ProdutoResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class CategoriaService {
         Categoria categoria1 = repository.findByNomeCategoria(dto.getNomeCategoria());
 
         if(categoria1 != null){
-throw new RuntimeException(("Categoria ja cadastrada"));
+throw new BusinessException("Categoria ja cadastrada");
 
         }
 
@@ -62,12 +63,10 @@ throw new RuntimeException(("Categoria ja cadastrada"));
     public List<CategoriaResponseDTO> listAllCategory(){
 
 
-
         return repository.findAll()
                 .stream()
                 .map(mapper::toDTO)
                 .toList();
-
 
 
     }

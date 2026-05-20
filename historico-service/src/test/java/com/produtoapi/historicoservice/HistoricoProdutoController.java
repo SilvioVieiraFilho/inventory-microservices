@@ -65,7 +65,7 @@ class HistoricoControllerTest {
 
         HistoricoProdutoResponseDTO response = new HistoricoProdutoResponseDTO();
 
-        when(service.buscarPorProdutoId(1L)).thenReturn(response);
+//        when(service.buscarPorProdutoId(1L)).thenReturn(response);
 
         mockMvc.perform(get("/eventos/1"))
                 .andExpect(status().isOk());

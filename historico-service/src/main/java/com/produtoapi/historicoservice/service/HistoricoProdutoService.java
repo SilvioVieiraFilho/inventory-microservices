@@ -31,6 +31,8 @@ public class HistoricoProdutoService {
             throw new RuntimeException("Quantidades não podem ser nulas");
         }
 
+
+
         HistoricoProduto historico = mapper.toEntity(dto);
 
         historico.setDiferenca(
@@ -44,12 +46,12 @@ public class HistoricoProdutoService {
         return mapper.toDTO(historicoSalvo);
 
     }
-    public HistoricoProdutoResponseDTO buscarPorProdutoId(Long produtoId) {
+    public HistoricoProdutoResponseDTO buscarPorId(Long id) {
 
         HistoricoProduto historico =
-                repository.findByProdutoId(produtoId)
+                repository.findById(id)
                         .orElseThrow(() ->
-                                new HistoricoNotFoundException(produtoId));
+                                new HistoricoNotFoundException(id));
 
         return mapper.toDTO(historico);
     }
@@ -87,11 +89,6 @@ public class HistoricoProdutoService {
 }
 
 
-//    buscarPorEvento(TipoEvento evento){
-//
-//
-//
-//    }
 
 
 

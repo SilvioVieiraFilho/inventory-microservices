@@ -7,9 +7,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProdutoDomainService {
 
-    // =====================================================
-    // 🔥 MOVIMENTAÇÃO DE ESTOQUE
-    // =====================================================
     public void atualizar(Produto produto, int quantidade) {
 
         if (quantidade == 0) {
@@ -23,31 +20,9 @@ public class ProdutoDomainService {
         }
     }
 
-    // =====================================================
-    // 🔥 INICIALIZAÇÃO
-    // =====================================================
     public void inicializar(Produto produto) {
         produto.definirQuantidade(produto.getQuantidade());
     }
 
-    // =====================================================
-    // 🔥 DADOS BÁSICOS
-    // =====================================================
-    public void atualizarDadosBasicos(Produto produto,
-                                      String nome,
-                                      Double preco,
-                                      Integer quantidade) {
 
-        if (nome != null) {
-            produto.setNome(nome);
-        }
-
-        if (preco != null) {
-            produto.setPreco(preco);
-        }
-
-        if (quantidade != null) {
-            produto.definirQuantidade(quantidade);
-        }
-    }
 }
