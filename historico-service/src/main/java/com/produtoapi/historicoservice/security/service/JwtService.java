@@ -1,6 +1,7 @@
 package com.produtoapi.historicoservice.security.service;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,35 +12,48 @@ import java.security.Key;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secret;
+    private final Key signingKey;
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+    public JwtService(@Value("${JWT_SECRET}") String secret) {
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String extractUsername(String token) {
-        return extractAllClaims(token).getSubject();
+        return extractAllClaims(cleanToken(token)).getSubject();
     }
 
     public String extractRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+        return extractAllClaims(cleanToken(token)).get("role", String.class);
+    }
+
+    public Long extractUserId(String token) {
+        try {
+            return Long.valueOf(extractUsername(token));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
+            extractAllClaims(cleanToken(token));
             return true;
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(signingKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private String cleanToken(String token) {
+        return token.startsWith("Bearer ")
+                ? token.substring(7)
+                : token;
     }
 }

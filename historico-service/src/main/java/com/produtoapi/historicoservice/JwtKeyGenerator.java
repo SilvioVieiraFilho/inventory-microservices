@@ -1,14 +1,16 @@
 package com.produtoapi.historicoservice;
-
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+
 import java.util.Base64;
+import javax.crypto.SecretKey;
 
 public class JwtKeyGenerator {
     public static void main(String[] args) {
-        var key = Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
-        String base64 = Base64.getEncoder().encodeToString(key.getEncoded());
+        SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-        System.out.println("SECRET BASE64:");
-        System.out.println(base64);
+        String encoded = Base64.getEncoder().encodeToString(key.getEncoded());
+
+        System.out.println(encoded);
     }
 }

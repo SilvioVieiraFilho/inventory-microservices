@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,10 +23,9 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 @WebMvcTest(ProdutoController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class ProdutoControllerTest {
@@ -40,6 +42,9 @@ class ProdutoControllerTest {
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // =========================
+    // LISTAR
+    // =========================
     @Nested
     class ListarProdutos {
 
@@ -51,14 +56,23 @@ class ProdutoControllerTest {
             dto.setId(1L);
             dto.setNome("Mouse");
 
-//            when(serviceProduto.listarTodos()).thenReturn(List.of(dto));
+            Page<ProdutoResponseDTO> page =
+                    new PageImpl<>(List.of(dto));
+
+            when(serviceProduto.listar(any(), any(PageRequest.class)))
+                    .thenReturn(page);
 
             mockMvc.perform(get("/produtos"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data[0].nome").value("Mouse"));
+                    .andExpect(jsonPath("$.data.content[0].nome").value("Mouse"));
+
+
         }
     }
 
+    // =========================
+    // SALVAR
+    // =========================
     @Nested
     class SalvarProduto {
 
@@ -71,6 +85,7 @@ class ProdutoControllerTest {
             request.setPreco(100.0);
             request.setQuantidade(10);
             request.setStatus(ProdutoStatus.ATIVO);
+            request.setCategoria_id(1l);
 
             ProdutoResponseDTO response = new ProdutoResponseDTO();
             response.setId(1L);
@@ -79,7 +94,6 @@ class ProdutoControllerTest {
             when(serviceProduto.salvar(any())).thenReturn(response);
 
             mockMvc.perform(post("/produtos")
-                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
@@ -87,6 +101,9 @@ class ProdutoControllerTest {
         }
     }
 
+    // =========================
+    // BUSCAR POR ID
+    // =========================
     @Nested
     class BuscarProduto {
 
@@ -106,6 +123,9 @@ class ProdutoControllerTest {
         }
     }
 
+    // =========================
+    // DELETAR
+    // =========================
     @Nested
     class DeletarProduto {
 
@@ -115,13 +135,15 @@ class ProdutoControllerTest {
 
             doNothing().when(serviceProduto).deletarProduto(1L);
 
-            mockMvc.perform(delete("/produtos/1")
-                            .with(csrf()))
+            mockMvc.perform(delete("/produtos/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Produto deletado com sucesso"));
         }
     }
 
+    // =========================
+    // ATUALIZAR
+    // =========================
     @Nested
     class AtualizarProduto {
 
@@ -134,15 +156,16 @@ class ProdutoControllerTest {
             request.setPreco(100.0);
             request.setQuantidade(10);
             request.setStatus(ProdutoStatus.ATIVO);
+            request.setCategoria_id(1l);
 
             ProdutoResponseDTO response = new ProdutoResponseDTO();
             response.setId(1L);
             response.setNome("Mouse");
 
-            when(serviceProduto.atualizarProduto(eq(1L), any())).thenReturn(response);
+            when(serviceProduto.atualizarProduto(eq(1L), any()))
+                    .thenReturn(response);
 
             mockMvc.perform(put("/produtos/1")
-                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -150,8 +173,12 @@ class ProdutoControllerTest {
         }
     }
 
+    // =========================
+    // SALVAR LISTA
+    // =========================
     @Nested
     class SalvarLista {
+
         @Test
         @WithMockUser
         void deveSalvarLista() throws Exception {
@@ -161,6 +188,7 @@ class ProdutoControllerTest {
             request.setPreco(100.0);
             request.setQuantidade(10);
             request.setStatus(ProdutoStatus.ATIVO);
+            request.setCategoria_id(1L);
 
             ProdutoResponseDTO response = new ProdutoResponseDTO();
             response.setId(1L);
@@ -170,34 +198,33 @@ class ProdutoControllerTest {
                     .thenReturn(List.of(response));
 
             mockMvc.perform(post("/produtos/salvarLista")
-                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(List.of(request))))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.data[0].nome").value("Teclado"));
         }
+    }
 
-        @Nested
-        class FiltroProdutos {
+    // =========================
+    // FILTRO
+    // =========================
+    @Nested
+    class FiltroProdutos {
 
-            @Test
-            @WithMockUser
-            void deveFiltrarProdutos() throws Exception {
+        @Test
+        @WithMockUser
+        void deveFiltrarProdutos() throws Exception {
 
-                ProdutoResponseDTO response = new ProdutoResponseDTO();
-                response.setId(1L);
-                response.setNome("Mouse");
-                when(serviceProduto.buscarFiltro(
-                        nullable(String.class),
-                        any(),
-                        any(),
-                        any()
-                )).thenReturn(List.of(response));
+            ProdutoResponseDTO response = new ProdutoResponseDTO();
+            response.setId(1L);
+            response.setNome("Mouse");
 
-                mockMvc.perform(get("/produtos/filtro"))
-                        .andExpect(status().isOk())
-                        .andExpect(jsonPath("$.data[0].nome").value("Mouse"));
-            }
+            when(serviceProduto.buscarFiltro(any(), any(), any(), any()))
+                    .thenReturn(List.of(response));
+
+            mockMvc.perform(get("/produtos/filtro"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].nome").value("Mouse"));
         }
     }
 }

@@ -4,9 +4,10 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "tb_historico_produto")
+@Table(name = "historicos_produtos")
 @Getter
 @Setter
 @Builder
@@ -20,9 +21,7 @@ public class HistoricoProduto {
 
     @Column(name = "produto_id", nullable = false)
     private Long produtoId;
-    @NotNull
-    @Column(name = "nome_produto", nullable = false)
-    private String nomeProduto;
+
 
     @NotNull
     @Column(name = "quantidade_anterior", nullable = false)
@@ -43,4 +42,8 @@ public class HistoricoProduto {
 
     @Column(name = "data_registro", nullable = false)
     private LocalDateTime dataRegistro;
+
+    @Column(name = "event_id", nullable = false, unique = true)
+    private UUID eventId;
+
 }

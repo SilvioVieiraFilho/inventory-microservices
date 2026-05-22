@@ -3,6 +3,7 @@ package com.produtoapi.historicoservice.service;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoRequestDTO;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoResponseDTO;
 import com.produtoapi.historicoservice.entity.HistoricoProduto;
+import com.produtoapi.historicoservice.enums.TipoEvento;
 import com.produtoapi.historicoservice.exception.HistoricoNotFoundException;
 import com.produtoapi.historicoservice.mapper.HistoricoProdutoMapper;
 import com.produtoapi.historicoservice.repository.HistoricoProdutoRepository;
@@ -19,33 +20,7 @@ public class HistoricoProdutoService {
 
     private final HistoricoProdutoMapper mapper;
     private final HistoricoProdutoRepository repository;
-    public HistoricoProdutoResponseDTO salvar(HistoricoProdutoRequestDTO dto) {
 
-        if (dto.getTipoEvento() == null) {
-            throw new RuntimeException("TipoEvento não pode ser nulo");
-        }
-
-        if (dto.getQuantidadeAnterior() == null ||
-                dto.getQuantidadeNova() == null) {
-
-            throw new RuntimeException("Quantidades não podem ser nulas");
-        }
-
-
-
-        HistoricoProduto historico = mapper.toEntity(dto);
-
-        historico.setDiferenca(
-                dto.getQuantidadeNova() - dto.getQuantidadeAnterior()
-        );
-
-        historico.setDataRegistro(LocalDateTime.now());
-
-        HistoricoProduto historicoSalvo = repository.save(historico);
-
-        return mapper.toDTO(historicoSalvo);
-
-    }
     public HistoricoProdutoResponseDTO buscarPorId(Long id) {
 
         HistoricoProduto historico =
@@ -62,16 +37,7 @@ public class HistoricoProdutoService {
                 .orElseThrow(() -> new  HistoricoNotFoundException(id));
     }
 
-//    public List<HistoricoProdutoResponseDTO>
-//    buscarPorProduto(Long produtoId){
-//
-//
-//    }
-//
-//    public List<HistoricoProdutoResponseDTO> listarTodos(){
-//
-//    }
-//
+
 
     public List<HistoricoProdutoResponseDTO> buscarPorPeriodo(LocalDateTime inicio, LocalDateTime fim) {
 

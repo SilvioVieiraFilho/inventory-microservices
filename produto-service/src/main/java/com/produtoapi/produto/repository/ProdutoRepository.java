@@ -20,5 +20,6 @@ Optional<Produto> findByNomeAndPrecoAndStatus(String nome, Double preco, Produto
 	@Query("SELECT p FROM Produto p JOIN FETCH p.categoria")
 	Page<Produto> findAll(Pageable pageable);
 
-	
+	Optional<Produto> findByNomeAndCategoria_Id(String nome, Long categoriaId);
+
 }

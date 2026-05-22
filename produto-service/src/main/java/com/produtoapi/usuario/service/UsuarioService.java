@@ -46,7 +46,7 @@ public class UsuarioService {
 
     public UsuarioResponseDTO salvar(UsuarioRequestDTO requestDTO) {
 
-        // 1. validação
+
         if (requestDTO.getEmail() == null || requestDTO.getEmail().isBlank()) {
             throw new BusinessException("Email obrigatório");
         }

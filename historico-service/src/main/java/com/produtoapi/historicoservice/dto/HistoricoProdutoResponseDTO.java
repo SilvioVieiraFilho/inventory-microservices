@@ -1,6 +1,7 @@
 package com.produtoapi.historicoservice.dto;
 
 import com.produtoapi.historicoservice.enums.TipoEvento;
+import com.sun.java.accessibility.util.EventID;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -13,8 +14,9 @@ import java.time.LocalDateTime;
 public class HistoricoProdutoResponseDTO {
 
     private Long id;
+
     private Long produtoId;
-    private String nomeProduto;
+
     private Integer quantidadeAnterior;
     private Integer quantidadeNova;
     private Integer diferenca;

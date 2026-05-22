@@ -7,7 +7,6 @@ import com.produtoapi.categoria.repository.CategoriaRepository;
 import com.produtoapi.categoria.dto.CategoriaRequestDTO;
 import com.produtoapi.categoria.dto.CategoriaResponseDTO;
 import com.produtoapi.exception.BusinessException;
-import com.produtoapi.produto.dto.ProdutoResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

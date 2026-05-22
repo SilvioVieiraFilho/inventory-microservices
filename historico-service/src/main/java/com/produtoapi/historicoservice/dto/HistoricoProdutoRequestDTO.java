@@ -20,8 +20,7 @@ public class HistoricoProdutoRequestDTO {
 
     @NotNull
     private Long produtoId;
-    @NotBlank
-    private String nomeProduto;
+
     @NotNull
     private Integer quantidadeAnterior;
     @NotNull

@@ -1,8 +1,9 @@
 package com.produtoapi.produto.dto;
 
-import com.produtoapi.historicoproduto.enums.TipoEvento;
+import com.produtoapi.produto.enums.TipoEvento;
 import lombok.*;
 
+import java.util.UUID;
 
 
 @Getter
@@ -11,6 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProdutoEventoDTO {
+    private UUID eventId;
 
     private Long produtoId;
     private String nome;

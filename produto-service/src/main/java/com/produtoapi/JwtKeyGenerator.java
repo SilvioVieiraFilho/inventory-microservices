@@ -1,9 +1,10 @@
-package com.produtoapi.historicoservice;
+package com.produtoapi;
+
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
-import java.util.Base64;
 import javax.crypto.SecretKey;
+import java.util.Base64;
 
 public class JwtKeyGenerator {
     public static void main(String[] args) {

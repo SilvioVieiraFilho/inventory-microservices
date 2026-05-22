@@ -2,6 +2,7 @@ package com.produtoapi.security;
 
 import com.produtoapi.security.filter.JwtAuthenticationFilter;
 import com.produtoapi.security.service.JwtService;
+import com.produtoapi.usuario.domain.Usuario;
 import com.produtoapi.usuario.repository.UsuarioRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,6 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -49,17 +52,21 @@ class JwtAuthenticationFilterTest {
 
         String token = "fake-token";
 
+        Usuario usuario = new Usuario();
+        usuario.setEmail("silvio@email.com");
+        usuario.setRole("USER");
+
         when(request.getHeader("Authorization"))
                 .thenReturn("Bearer " + token);
-
-        when(jwtService.isTokenValid(token))
-                .thenReturn(true);
 
         when(jwtService.extractUsername(token))
                 .thenReturn("silvio@email.com");
 
-        when(jwtService.extractRole(token))
-                .thenReturn("USER");
+        when(jwtService.isTokenValid(token))
+                .thenReturn(true);
+
+        when(usuarioRepository.findByEmail("silvio@email.com"))
+                .thenReturn(Optional.of(usuario));
 
         filter.doFilter(request, response, filterChain);
 
@@ -67,15 +74,15 @@ class JwtAuthenticationFilterTest {
                 SecurityContextHolder.getContext().getAuthentication()
         );
 
-        assertEquals(
-                "silvio@email.com",
+        Usuario principal = (Usuario)
                 SecurityContextHolder.getContext()
                         .getAuthentication()
-                        .getPrincipal()
-        );
+                        .getPrincipal();
 
-        verify(filterChain, times(1))
-                .doFilter(request, response);
+        assertEquals(
+                "silvio@email.com",
+                principal.getEmail()
+        );
     }
 
     @Test

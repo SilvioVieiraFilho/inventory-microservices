@@ -16,10 +16,7 @@ public class HistoricoProdutoController {
     private final HistoricoProdutoService historicoProdutoService;
 
 
-    @PostMapping("/produto")
-    public ResponseEntity<HistoricoProdutoResponseDTO> salvar(@RequestBody HistoricoProdutoRequestDTO dto) {
-        return ResponseEntity.ok(historicoProdutoService.salvar(dto));
-    }
+
 
     @GetMapping("/historico")
     public ResponseEntity<ApiResponse<List<HistoricoProdutoResponseDTO>>> listaPorPeriodo(@RequestParam(required = false) LocalDateTime inicio, @RequestParam(required = false) LocalDateTime fim) {

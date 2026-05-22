@@ -1,12 +1,11 @@
 package com.produtoapi.security;
 import com.produtoapi.security.service.JwtService;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+
+import com.produtoapi.usuario.domain.Usuario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.security.Key;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,15 +18,11 @@ class JwtServiceTest {
 
         jwtService = new JwtService();
 
-        String secret = "4A6D686F344B564D527952376A576E5A72347537782125412A4428472B4B6250";
-
-        ReflectionTestUtils.setField(jwtService, "secret", secret);
-
-        Key key = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(secret)
+        ReflectionTestUtils.setField(
+                jwtService,
+                "secret",
+                "minha-chave-super-secreta-com-mais-de-32-bytes"
         );
-
-        ReflectionTestUtils.setField(jwtService, "key", key);
     }
 
     @Test
@@ -39,8 +34,7 @@ class JwtServiceTest {
         );
 
         assertNotNull(token);
-
-        assertFalse(token.isEmpty());
+        assertFalse(token.isBlank());
     }
 
     @Test
@@ -53,7 +47,10 @@ class JwtServiceTest {
 
         String username = jwtService.extractUsername(token);
 
-        assertEquals("user@email.com", username);
+        assertEquals(
+                "user@email.com",
+                username
+        );
     }
 
     @Test
@@ -66,7 +63,10 @@ class JwtServiceTest {
 
         String role = jwtService.extractRole(token);
 
-        assertEquals("ADMIN", role);
+        assertEquals(
+                "ADMIN",
+                role
+        );
     }
 
     @Test
@@ -77,18 +77,72 @@ class JwtServiceTest {
                 "USER"
         );
 
-        boolean valid = jwtService.isTokenValid(token);
+        assertTrue(
+                jwtService.isTokenValid(token)
+        );
+    }
 
-        assertTrue(valid);
+    @Test
+    void deveRetornarFalseQuandoTokenForInvalido() {
+
+        assertFalse(
+                jwtService.isTokenValid("token-invalido")
+        );
     }
 
     @Test
     void deveFalharComTokenInvalido() {
 
-        assertThrows(Exception.class, () -> {
+        assertThrows(
+                Exception.class,
+                () -> jwtService.extractUsername("token-invalido")
+        );
+    }
 
-            jwtService.extractUsername("token-invalido");
+    @Test
+    void deveGerarTokenComUsuarioEExtrairId() {
 
-        });
+        Usuario usuario = new Usuario();
+        usuario.setId(10L);
+        usuario.setRole("USER");
+
+        String token = jwtService.generateToken(usuario);
+
+        Long userId = jwtService.extractUserId(token);
+
+        assertEquals(
+                10L,
+                userId
+        );
+    }
+
+    @Test
+    void deveExtrairRoleDoTokenGeradoComUsuario() {
+
+        Usuario usuario = new Usuario();
+        usuario.setId(1L);
+        usuario.setRole("ADMIN");
+
+        String token = jwtService.generateToken(usuario);
+
+        String role = jwtService.extractRole(token);
+
+        assertEquals(
+                "ADMIN",
+                role
+        );
+    }
+
+    @Test
+    void deveExtrairClaimsDoToken() {
+
+        String token = jwtService.generateToken(
+                "user@email.com",
+                "USER"
+        );
+
+        assertNotNull(
+                jwtService.extractAllClaims(token)
+        );
     }
 }

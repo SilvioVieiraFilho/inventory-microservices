@@ -1,19 +1,17 @@
 package com.produtoapi.historicoservice;
 
-import com.produtoapi.historicoservice.dto.HistoricoProdutoRequestDTO;
 import com.produtoapi.historicoservice.dto.HistoricoProdutoResponseDTO;
 import com.produtoapi.historicoservice.entity.HistoricoProduto;
-import com.produtoapi.historicoservice.enums.TipoEvento;
 import com.produtoapi.historicoservice.exception.HistoricoNotFoundException;
 import com.produtoapi.historicoservice.mapper.HistoricoProdutoMapper;
 import com.produtoapi.historicoservice.repository.HistoricoProdutoRepository;
 import com.produtoapi.historicoservice.service.HistoricoProdutoService;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,331 +22,98 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class HistoricoProdutoServiceTest {
 
-    @Mock
-    private HistoricoProdutoMapper mapper;
+    @InjectMocks
+    private HistoricoProdutoService service;
 
     @Mock
     private HistoricoProdutoRepository repository;
 
-    @InjectMocks
-    private HistoricoProdutoService service;
+    @Mock
+    private HistoricoProdutoMapper mapper;
 
-    @Nested
-    class SalvarHistoricoComSucesso {
+    @Test
+    void deveBuscarPorIdComSucesso() {
 
-        @Test
-        void deveSalvarHistoricoComSucesso() {
+        Long id = 1L;
 
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .nomeProduto("Pilha")
-                            .quantidadeAnterior(2)
-                            .quantidadeNova(5)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
+        HistoricoProduto entity = new HistoricoProduto();
+        HistoricoProdutoResponseDTO dto = new HistoricoProdutoResponseDTO();
 
-            HistoricoProduto entity =
-                    HistoricoProduto.builder()
-                            .nomeProduto("Pilha")
-                            .build();
+        when(repository.findById(id)).thenReturn(Optional.of(entity));
+        when(mapper.toDTO(entity)).thenReturn(dto);
 
-            HistoricoProduto historicoSalvo =
-                    HistoricoProduto.builder()
-                            .id(1L)
-                            .nomeProduto("Pilha")
-                            .diferenca(3)
-                            .build();
+        HistoricoProdutoResponseDTO result = service.buscarPorId(id);
 
-            HistoricoProdutoResponseDTO responseDTO =
-                    HistoricoProdutoResponseDTO.builder()
-                            .id(1L)
-                            .nomeProduto("Pilha")
-                            .build();
-
-            when(mapper.toEntity(dto)).thenReturn(entity);
-            when(repository.save(entity)).thenReturn(historicoSalvo);
-            when(mapper.toDTO(historicoSalvo)).thenReturn(responseDTO);
-
-            HistoricoProdutoResponseDTO response = service.salvar(dto);
-
-            assertEquals(1L, response.getId());
-            assertEquals("Pilha", response.getNomeProduto());
-
-            assertEquals(3, entity.getDiferenca());
-            assertNotNull(entity.getDataRegistro());
-
-            verify(mapper, times(1)).toEntity(dto);
-            verify(repository, times(1)).save(entity);
-            verify(mapper, times(1)).toDTO(historicoSalvo);
-        }
+        assertNotNull(result);
+        verify(repository).findById(id);
+        verify(mapper).toDTO(entity);
     }
 
-    @Nested
-    class Validacoes {
+    @Test
+    void deveLancarExcecaoQuandoNaoEncontrarPorId() {
 
-        @Test
-        void deveLancarExcecaoQuandoTipoEventoForNulo() {
+        Long id = 1L;
 
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .nomeProduto("Pilha")
-                            .quantidadeAnterior(2)
-                            .quantidadeNova(5)
-                            .build();
+        when(repository.findById(id)).thenReturn(Optional.empty());
 
-            RuntimeException ex =
-                    assertThrows(RuntimeException.class,
-                            () -> service.salvar(dto));
+        assertThrows(HistoricoNotFoundException.class,
+                () -> service.buscarPorId(id));
 
-            assertEquals("TipoEvento não pode ser nulo", ex.getMessage());
-
-            verify(repository, never()).save(any());
-        }
-
-        @Test
-        void deveLancarExcecaoQuandoQuantidadeAnteriorForNula() {
-
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .nomeProduto("Pilha")
-                            .quantidadeNova(5)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
-
-            RuntimeException ex =
-                    assertThrows(RuntimeException.class,
-                            () -> service.salvar(dto));
-
-            assertEquals("Quantidades não podem ser nulas", ex.getMessage());
-
-            verify(repository, never()).save(any());
-        }
-
-        @Test
-        void deveLancarExcecaoQuandoQuantidadeNovaForNula() {
-
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .nomeProduto("Pilha")
-                            .quantidadeAnterior(5)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
-
-            RuntimeException ex =
-                    assertThrows(RuntimeException.class,
-                            () -> service.salvar(dto));
-
-            assertEquals("Quantidades não podem ser nulas", ex.getMessage());
-
-            verify(repository, never()).save(any());
-        }
+        verify(repository).findById(id);
+        verifyNoInteractions(mapper);
     }
 
-    @Nested
-    class CalculoDeDiferenca {
+    @Test
+    void deveBuscarPorPeriodoComSucesso() {
 
-        @Test
-        void deveCalcularDiferencaPositiva() {
+        LocalDateTime inicio = LocalDateTime.now().minusDays(1);
+        LocalDateTime fim = LocalDateTime.now();
 
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .quantidadeAnterior(2)
-                            .quantidadeNova(5)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
+        HistoricoProduto entity = new HistoricoProduto();
+        HistoricoProdutoResponseDTO dto = new HistoricoProdutoResponseDTO();
 
-            HistoricoProduto entity = new HistoricoProduto();
+        when(repository.findByDataRegistroBetween(inicio, fim))
+                .thenReturn(List.of(entity));
 
-            when(mapper.toEntity(dto)).thenReturn(entity);
-            when(repository.save(any())).thenReturn(entity);
-            when(mapper.toDTO(any())).thenReturn(new HistoricoProdutoResponseDTO());
+        when(mapper.toDTO(entity)).thenReturn(dto);
 
-            service.salvar(dto);
+        List<HistoricoProdutoResponseDTO> result =
+                service.buscarPorPeriodo(inicio, fim);
 
-            assertEquals(3, entity.getDiferenca());
-        }
+        assertNotNull(result);
+        assertEquals(1, result.size());
 
-        @Test
-        void deveCalcularDiferencaNegativa() {
-
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .quantidadeAnterior(10)
-                            .quantidadeNova(5)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
-
-            HistoricoProduto entity = new HistoricoProduto();
-
-            when(mapper.toEntity(dto)).thenReturn(entity);
-            when(repository.save(any())).thenReturn(entity);
-            when(mapper.toDTO(any())).thenReturn(new HistoricoProdutoResponseDTO());
-
-            service.salvar(dto);
-
-            assertEquals(-5, entity.getDiferenca());
-        }
-
-        @Test
-        void deveCalcularDiferencaZero() {
-
-            HistoricoProdutoRequestDTO dto =
-                    HistoricoProdutoRequestDTO.builder()
-                            .quantidadeAnterior(10)
-                            .quantidadeNova(10)
-                            .tipoEvento(TipoEvento.PRODUTO_CRIADO)
-                            .build();
-
-            HistoricoProduto entity = new HistoricoProduto();
-
-            when(mapper.toEntity(dto)).thenReturn(entity);
-            when(repository.save(any())).thenReturn(entity);
-            when(mapper.toDTO(any())).thenReturn(new HistoricoProdutoResponseDTO());
-
-            service.salvar(dto);
-
-            assertEquals(0, entity.getDiferenca());
-        }
+        verify(repository).findByDataRegistroBetween(inicio, fim);
+        verify(mapper).toDTO(entity);
     }
 
-    @Nested
-    class ListarPorId {
+    @Test
+    void deveLancarErroQuandoDataInicioForMaiorQueFim() {
 
-        @Test
-        void deveRetornarHistoricoQuandoIdExistir() {
+        LocalDateTime inicio = LocalDateTime.now();
+        LocalDateTime fim = LocalDateTime.now().minusDays(1);
 
-            Long id = 1L;
+        assertThrows(IllegalArgumentException.class,
+                () -> service.buscarPorPeriodo(inicio, fim));
 
-            HistoricoProduto entity =
-                    HistoricoProduto.builder()
-                            .id(id)
-                            .nomeProduto("Pilha")
-                            .build();
-
-            HistoricoProdutoResponseDTO responseDTO =
-                    HistoricoProdutoResponseDTO.builder()
-                            .id(id)
-                            .nomeProduto("Pilha")
-                            .build();
-
-            when(repository.findById(id))
-                    .thenReturn(Optional.of(entity));
-
-            when(mapper.toDTO(entity))
-                    .thenReturn(responseDTO);
-
-            HistoricoProdutoResponseDTO response =
-                    service.buscarPorId(id);
-
-            assertEquals(id, response.getId());
-            assertEquals("Pilha", response.getNomeProduto());
-
-            verify(repository, times(1)).findById(id);
-            verify(mapper, times(1)).toDTO(entity);
-        }
-
-        @Test
-        void deveLancarExcecaoQuandoIdNaoExistir() {
-
-            Long id = 99L;
-
-            when(repository.findById(id))
-                    .thenReturn(Optional.empty());
-
-            assertThrows(
-                    HistoricoNotFoundException.class,
-                    () -> service.buscarPorId(id));
-
-            verify(repository, times(1)).findById(id);
-            verify(mapper, never()).toDTO(any());
-        }
-
-
+        verifyNoInteractions(repository);
+        verifyNoInteractions(mapper);
     }
 
-    @Nested
-    class BuscarPorPeriodo {
+    @Test
+    void deveRetornarListaVaziaQuandoNaoHouverHistorico() {
 
-        @Test
-        void deveRetornarListaQuandoPeriodoValido() {
+        LocalDateTime inicio = LocalDateTime.now().minusDays(1);
+        LocalDateTime fim = LocalDateTime.now();
 
-            LocalDateTime inicio = LocalDateTime.now().minusDays(5);
-            LocalDateTime fim = LocalDateTime.now();
+        when(repository.findByDataRegistroBetween(inicio, fim))
+                .thenReturn(List.of());
 
-            HistoricoProduto entity =
-                    HistoricoProduto.builder()
-                            .id(1L)
-                            .nomeProduto("Pilha")
-                            .build();
+        List<HistoricoProdutoResponseDTO> result =
+                service.buscarPorPeriodo(inicio, fim);
 
-            HistoricoProdutoResponseDTO dto =
-                    HistoricoProdutoResponseDTO.builder()
-                            .id(1L)
-                            .nomeProduto("Pilha")
-                            .build();
+        assertTrue(result.isEmpty());
 
-            when(repository.findByDataRegistroBetween(inicio, fim))
-                    .thenReturn(List.of(entity));
-
-            when(mapper.toDTO(entity))
-                    .thenReturn(dto);
-
-            List<HistoricoProdutoResponseDTO> response =
-                    service.buscarPorPeriodo(inicio, fim);
-
-            assertEquals(1, response.size());
-            assertEquals("Pilha", response.get(0).getNomeProduto());
-
-            verify(repository, times(1))
-                    .findByDataRegistroBetween(inicio, fim);
-
-            verify(mapper, times(1))
-                    .toDTO(entity);
-        }
-
-        @Test
-        void deveLancarExcecaoQuandoInicioForMaiorQueFim() {
-
-            LocalDateTime inicio = LocalDateTime.now();
-            LocalDateTime fim = LocalDateTime.now().minusDays(1);
-
-            IllegalArgumentException ex =
-                    assertThrows(
-                            IllegalArgumentException.class,
-                            () -> service.buscarPorPeriodo(inicio, fim)
-                    );
-
-            assertEquals(
-                    "Data de início não pode ser maior que a data fim.",
-                    ex.getMessage()
-            );
-
-            verify(repository, never())
-                    .findByDataRegistroBetween(any(), any());
-
-            verify(mapper, never())
-                    .toDTO(any());
-        }
-
-        @Test
-        void deveRetornarListaVaziaQuandoNaoHouverRegistros() {
-
-            LocalDateTime inicio = LocalDateTime.now().minusDays(5);
-            LocalDateTime fim = LocalDateTime.now();
-
-            when(repository.findByDataRegistroBetween(inicio, fim))
-                    .thenReturn(List.of());
-
-            List<HistoricoProdutoResponseDTO> response =
-                    service.buscarPorPeriodo(inicio, fim);
-
-            assertTrue(response.isEmpty());
-
-            verify(repository, times(1))
-                    .findByDataRegistroBetween(inicio, fim);
-
-            verify(mapper, never())
-                    .toDTO(any());
-        }
+        verify(repository).findByDataRegistroBetween(inicio, fim);
     }
 }
