@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class HistoricoControllerTest {
+class HistoricoProdutoControllerTest {
 
     @Autowired
     private MockMvc mockMvc;

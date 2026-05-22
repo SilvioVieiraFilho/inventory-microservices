@@ -11,7 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/eventos")
-public class HistoricoController {
+public class HistoricoProdutoController {
 
     private final HistoricoProdutoService historicoProdutoService;
 
