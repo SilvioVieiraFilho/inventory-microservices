@@ -31,11 +31,10 @@ public class CategoriaService {
                 .statusCategoria(StatusCategoria.ATIVO)
                 .build();
 
-
         Categoria categoria1 = repository.findByNomeCategoria(dto.getNomeCategoria());
 
-        if(categoria1 != null){
-throw new BusinessException("Categoria ja cadastrada");
+        if (categoria1 != null) {
+            throw new BusinessException("Categoria ja cadastrada");
 
         }
 
@@ -45,7 +44,8 @@ throw new BusinessException("Categoria ja cadastrada");
 
 
     }
-    public Optional<CategoriaResponseDTO> listarIdCategoria(Long id){
+
+    public Optional<CategoriaResponseDTO> listarIdCategoria(Long id) {
 
         Optional<Categoria> listaCategoria = repository.findById(id);
 
@@ -55,22 +55,13 @@ throw new BusinessException("Categoria ja cadastrada");
 
         return listaCategoria.map(mapper::toDTO);
 
-
     }
 
-
-    public List<CategoriaResponseDTO> listAllCategory(){
-
-
-        return repository.findAll()
-                .stream()
-                .map(mapper::toDTO)
-                .toList();
+    public List<CategoriaResponseDTO> listAllCategory() {
+        return repository.findAll().stream().map(mapper::toDTO).toList();
 
 
     }
-
-
 }
 
 
