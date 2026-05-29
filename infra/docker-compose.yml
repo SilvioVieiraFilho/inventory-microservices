@@ -1,4 +1,4 @@
-```yaml
+
 services:
 
   postgres:
@@ -143,4 +143,3 @@ networks:
 
 volumes:
   postgres-data:
-```
