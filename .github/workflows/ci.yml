@@ -18,47 +18,77 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # JAVA
+      # JAVA 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "21"
 
-      # DOCKER COMPOSE
+      # START CONTAINERS
       - name: Start containers
         run: |
+          set -e
+
           docker compose -f infra/docker-compose.yml up -d --build
 
-      # ESPERA A API SUBIR
-      - name: Wait services startup
-        run: sleep 60
+          echo "Containers started"
 
-      # TESTE LOGIN
-      - name: Run Login Load Test
+      # WAIT SERVICES
+      - name: Wait services startup
+        run: sleep 90
+
+      # VALIDATE CONTAINERS
+      - name: Validate containers
+        run: |
+
+          docker compose -f infra/docker-compose.yml ps
+
+          # Verifica containers que falharam
+          if docker compose -f infra/docker-compose.yml ps | grep -q "Exit"; then
+            echo "One or more containers exited unexpectedly"
+
+            docker compose -f infra/docker-compose.yml logs
+
+            exit 1
+          fi
+
+      # WAIT HEALTHCHECK
+      - name: Wait for produto-service healthcheck
+        run: |
+          timeout 180 bash -c '
+            until [ "$(docker inspect --format="{{json .State.Health.Status }}" produto-service)" == "\"healthy\"" ]; do
+              echo "Waiting produto-service healthcheck..."
+              sleep 5
+            done
+          '
+
+      # INSTALL K6
+      - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Execute Login Test
+      # LOGIN TEST
+      - name: Execute Login Load Test
         run: |
           k6 run infra/k6/login-test.js
 
-      # TESTE POST PRODUTO
+      # PRODUTO POST TEST
       - name: Execute Produto POST Test
         run: |
           k6 run infra/k6/produto-post-test.js
 
-      # TESTE GET PRODUTOS
+      # PRODUTO GET TEST
       - name: Execute Produto GET Test
         run: |
           k6 run infra/k6/produto-get-test.js
 
-      # LOGS CASO FALHE
+      # SHOW LOGS IF FAIL
       - name: Show container logs
         if: failure()
         run: |
           docker compose -f infra/docker-compose.yml logs
 
-      # FINALIZA CONTAINERS
+      # STOP CONTAINERS
       - name: Stop containers
         if: always()
         run: |
