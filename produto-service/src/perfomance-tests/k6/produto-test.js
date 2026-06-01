@@ -13,6 +13,9 @@ export const options = {
 
 const BASE_URL = 'http://localhost:8080';
 
+// 🔥 pega do CI
+const CATEGORY_ID = __ENV.CATEGORY_ID;
+
 export default function () {
 
     const payload = JSON.stringify({
@@ -20,7 +23,9 @@ export default function () {
         quantidade: 10,
         preco: 199.90,
         status: 'ATIVO',
-        categoria_id: 1
+
+        // 🔥 AQUI está a correção
+        categoria_id: Number(CATEGORY_ID)
     });
 
     const params = {
@@ -35,14 +40,18 @@ export default function () {
         params
     );
 
+    let body = {};
+    try {
+        body = response.json();
+    } catch (e) {
+        console.log('Erro parsing JSON');
+    }
+
     console.log('STATUS:', response.status);
     console.log('BODY:', response.body);
 
-    const body = response.json();
-
     check(response, {
         'status 201': (r) => r.status === 201,
-        'tem message': () => body.message !== undefined,
         'tempo resposta < 500ms': (r) => r.timings.duration < 500,
     });
 

@@ -73,10 +73,7 @@ jobs:
       - name: Wait Kafka
         run: |
           timeout 180 bash -c '
-            until docker exec kafka \
-              kafka-topics \
-              --bootstrap-server localhost:9092 \
-              --list > /dev/null 2>&1; do
+            until docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
               echo "Waiting Kafka..."
               sleep 5
             done
@@ -92,12 +89,7 @@ jobs:
           docker exec postgres-db pg_isready -U postgres
 
           echo "Checking Kafka..."
-          docker exec kafka \
-            kafka-topics \
-            --bootstrap-server localhost:9092 \
-            --list
-
-          echo "Infrastructure is ready!"
+          docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 
       # =========================================================
       # WAIT PRODUTO SERVICE
@@ -106,28 +98,23 @@ jobs:
         run: |
           timeout 300 bash -c '
             for i in {1..60}; do
-              STATUS=$(docker inspect \
-                --format="{{.State.Health.Status}}" \
-                produto-service 2>/dev/null || echo "starting")
+              STATUS=$(docker inspect --format="{{.State.Health.Status}}" produto-service 2>/dev/null || echo "starting")
 
               echo "[$i/60] produto-service: $STATUS"
 
               if [ "$STATUS" = "healthy" ]; then
-                echo "produto-service is healthy!"
                 exit 0
               fi
 
               if [ "$STATUS" = "unhealthy" ]; then
-                echo "produto-service became unhealthy"
-                docker logs --tail 300 produto-service || true
+                docker logs --tail 300 produto-service
                 exit 1
               fi
 
               sleep 5
             done
 
-            echo "Timeout waiting produto-service"
-            docker logs produto-service || true
+            docker logs produto-service
             exit 1
           '
 
@@ -138,28 +125,23 @@ jobs:
         run: |
           timeout 300 bash -c '
             for i in {1..60}; do
-              STATUS=$(docker inspect \
-                --format="{{.State.Health.Status}}" \
-                historico-service 2>/dev/null || echo "starting")
+              STATUS=$(docker inspect --format="{{.State.Health.Status}}" historico-service 2>/dev/null || echo "starting")
 
               echo "[$i/60] historico-service: $STATUS"
 
               if [ "$STATUS" = "healthy" ]; then
-                echo "historico-service is healthy!"
                 exit 0
               fi
 
               if [ "$STATUS" = "unhealthy" ]; then
-                echo "historico-service became unhealthy"
-                docker logs --tail 300 historico-service || true
+                docker logs --tail 300 historico-service
                 exit 1
               fi
 
               sleep 5
             done
 
-            echo "Timeout waiting historico-service"
-            docker logs historico-service || true
+            docker logs historico-service
             exit 1
           '
 
@@ -170,13 +152,7 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml ps
 
-          if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy"; then
-            echo "Some containers are failing"
-            docker compose -f infra/docker-compose.yml logs
-            exit 1
-          fi
-
-          echo "All containers are healthy!"
+          docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy" && exit 1 || echo "OK"
 
       # =========================================================
       # CREATE TEST USER
@@ -185,7 +161,7 @@ jobs:
         run: |
           sleep 10
 
-          curl -X POST http://localhost:8080/auth/register \
+          curl -s -X POST http://localhost:8080/auth/register \
             -H "Content-Type: application/json" \
             -d '{
               "email":"silvio@email.com",
@@ -208,7 +184,7 @@ jobs:
         run: k6 run infra/k6/login-test.js
 
       # =========================================================
-      # CREATE TEST CATEGORY
+      # CREATE CATEGORY (FIX CRÍTICO)
       # =========================================================
       - name: Create test category
         run: |
@@ -218,7 +194,7 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "nome": "Eletronicos",
-              "descricaoCategoria": "categoria criada para testes de carga"
+              "descricaoCategoria": "categoria teste carga"
             }')
 
           echo "CATEGORY RESPONSE: $RESPONSE"
@@ -232,6 +208,8 @@ jobs:
       # =========================================================
       - name: Execute Produto POST Test
         run: k6 run infra/k6/produto-test.js
+        env:
+          CATEGORY_ID: ${{ env.CATEGORY_ID }}
 
       # =========================================================
       # PRODUTO GET TEST
@@ -245,16 +223,9 @@ jobs:
       - name: Show all logs
         if: always()
         run: |
-          echo "========== POSTGRES =========="
           docker logs postgres-db || true
-
-          echo "========== KAFKA =========="
           docker logs kafka || true
-
-          echo "========== PRODUTO SERVICE =========="
           docker logs produto-service || true
-
-          echo "========== HISTORICO SERVICE =========="
           docker logs historico-service || true
 
       # =========================================================
