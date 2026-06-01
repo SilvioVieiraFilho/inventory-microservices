@@ -239,14 +239,14 @@ jobs:
       # =========================================================
       - name: Execute Produto POST Test
         run: |
-          k6 run infra/k6/produto-post-test.js
+          k6 run infra/k6/produto-test.js
 
       # =========================================================
       # PRODUTO GET TEST
       # =========================================================
       - name: Execute Produto GET Test
         run: |
-          k6 run infra/k6/produto-get-test.js
+          k6 run infra/k6/stress-test.js
 
       # =========================================================
       # SHOW LOGS
