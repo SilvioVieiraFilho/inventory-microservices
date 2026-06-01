@@ -54,17 +54,18 @@ public class GlobalExceptionHandler {
 			Exception ex,
 			HttpServletRequest request) {
 
+		ex.printStackTrace(); // 🔥 ESSENCIAL
+
 		ErrorResponse error = new ErrorResponse(
 				LocalDateTime.now(),
 				500,
 				"INTERNAL_SERVER_ERROR",
-				"Erro inesperado no sistema",
+				ex.getMessage(), // 🔥 MUITO MELHOR QUE MENSAGEM FIXA
 				request.getRequestURI()
 		);
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
 	}
-
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<List<String>> handleValidation(
 			MethodArgumentNotValidException ex) {
