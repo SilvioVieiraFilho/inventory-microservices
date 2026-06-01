@@ -217,8 +217,7 @@ jobs:
           curl -X POST http://localhost:8080/auth/register \
             -H "Content-Type: application/json" \
             -d '{
-              "nome":"Admin",
-              "email":"admin@email.com",
+              "email":"silvio@email.com",
               "senha":"123456"
             }'
 
