@@ -3,7 +3,7 @@ services:
   postgres:
     image: postgres:16
     container_name: postgres-db
-    restart: always
+    restart: unless-stopped
 
     environment:
       POSTGRES_USER: postgres
@@ -13,11 +13,11 @@ services:
     ports:
       - "5432:5432"
 
-    networks:
-      - backend-network
-
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
+    networks:
+      - backend-network
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -29,10 +29,11 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
-    restart: always
+    restart: unless-stopped
 
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
 
     ports:
       - "2181:2181"
@@ -40,14 +41,21 @@ services:
     networks:
       - backend-network
 
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
-    restart: always
+    restart: unless-stopped
 
     depends_on:
       zookeeper:
-        condition: service_started
+        condition: service_healthy
 
     ports:
       - "9092:9092"
@@ -58,22 +66,41 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
 
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
 
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
     networks:
       - backend-network
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
   produto-service:
     build:
       context: ../produto-service
 
     container_name: produto-service
-    restart: always
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      kafka:
+        condition: service_healthy
 
     ports:
       - "8080:8080"
@@ -89,12 +116,8 @@ services:
 
       JWT_SECRET: BEQbV/vuYiPGqhpzJA/WC/D2soi2OqqrhfrdA9hlixk=
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-      kafka:
-        condition: service_started
+    networks:
+      - backend-network
 
     healthcheck:
       test:
@@ -105,17 +128,21 @@ services:
       interval: 15s
       timeout: 5s
       retries: 15
-      start_period: 90s
-
-    networks:
-      - backend-network
+      start_period: 120s
 
   historico-service:
     build:
       context: ../historico-service
 
     container_name: historico-service
-    restart: always
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      kafka:
+        condition: service_healthy
 
     ports:
       - "8081:8081"
@@ -131,12 +158,8 @@ services:
 
       JWT_SECRET: BEQbV/vuYiPGqhpzJA/WC/D2soi2OqqrhfrdA9hlixk=
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-      kafka:
-        condition: service_started
+    networks:
+      - backend-network
 
     healthcheck:
       test:
@@ -147,10 +170,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 15
-      start_period: 90s
-
-    networks:
-      - backend-network
+      start_period: 120s
 
 networks:
   backend-network:

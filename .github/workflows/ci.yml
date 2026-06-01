@@ -15,31 +15,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ==========================================
       # CHECKOUT
+      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ==========================================
       # JAVA 21
+      # ==========================================
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
+      # ==========================================
       # START CONTAINERS
+      # ==========================================
       - name: Start containers
         run: |
           docker compose -f infra/docker-compose.yml up -d --build
 
-      # SHOW CONTAINERS
+      # ==========================================
+      # SHOW CONTAINER STATUS
+      # ==========================================
       - name: Show containers
         run: |
           docker compose -f infra/docker-compose.yml ps
 
+      # ==========================================
       # WAIT POSTGRESQL
+      # ==========================================
       - name: Wait PostgreSQL
         run: |
           timeout 180 bash -c '
+
             until docker exec postgres-db pg_isready -U postgres; do
               echo "Waiting PostgreSQL..."
               sleep 5
@@ -48,56 +59,56 @@ jobs:
             echo "PostgreSQL is ready!"
           '
 
+      # ==========================================
       # WAIT KAFKA
+      # ==========================================
       - name: Wait Kafka
         run: |
           timeout 240 bash -c '
 
-            echo "Waiting Kafka process startup..."
-
-            until docker logs kafka 2>&1 | grep -q "started (kafka.server.KafkaServer)"; do
-              echo "Waiting Kafka..."
-              sleep 5
-            done
-
-            echo "Kafka process started"
-
-            echo "Waiting broker stabilization..."
+            echo "Waiting Kafka broker..."
 
             for i in {1..40}; do
 
-              if docker exec kafka kafka-broker-api-versions.sh \
-                --bootstrap-server localhost:9092 &>/dev/null; then
+              if docker exec kafka kafka-broker-api-versions \
+                --bootstrap-server localhost:9092 > /dev/null 2>&1; then
 
                 echo "Kafka broker is ready!"
                 exit 0
               fi
 
-              echo "Broker not ready yet... ($i/40)"
-              sleep 3
+              echo "Kafka not ready yet... ($i/40)"
+              sleep 5
             done
 
-            echo "Kafka broker failed to stabilize"
+            echo "Kafka broker failed"
+
+            echo "========== KAFKA LOGS =========="
             docker logs kafka
 
             exit 1
           '
 
+      # ==========================================
       # VERIFY INFRASTRUCTURE
+      # ==========================================
       - name: Verify infrastructure readiness
         run: |
+
           echo "Checking PostgreSQL..."
           docker exec postgres-db pg_isready -U postgres
 
           echo "Checking Kafka..."
-          docker exec kafka kafka-topics.sh \
+          docker exec kafka kafka-topics \
             --list \
             --bootstrap-server localhost:9092
 
           echo "Infrastructure is ready!"
 
+      # ==========================================
       # WAIT PRODUTO SERVICE
-      - name: Wait for produto-service healthcheck
+      # ==========================================
+      - name: Wait produto-service
         run: |
           timeout 300 bash -c '
 
@@ -115,10 +126,11 @@ jobs:
               fi
 
               if [ "$status" = "unhealthy" ]; then
+
                 echo "produto-service became unhealthy"
 
                 echo "========== PRODUTO LOGS =========="
-                docker logs --tail 100 produto-service || true
+                docker logs --tail 200 produto-service || true
 
                 exit 1
               fi
@@ -128,13 +140,16 @@ jobs:
 
             echo "Timeout waiting for produto-service"
 
+            echo "========== PRODUTO LOGS =========="
             docker logs produto-service || true
 
             exit 1
           '
 
+      # ==========================================
       # WAIT HISTORICO SERVICE
-      - name: Wait for historico-service healthcheck
+      # ==========================================
+      - name: Wait historico-service
         run: |
           timeout 300 bash -c '
 
@@ -152,10 +167,11 @@ jobs:
               fi
 
               if [ "$status" = "unhealthy" ]; then
+
                 echo "historico-service became unhealthy"
 
                 echo "========== HISTORICO LOGS =========="
-                docker logs --tail 100 historico-service || true
+                docker logs --tail 200 historico-service || true
 
                 exit 1
               fi
@@ -165,17 +181,22 @@ jobs:
 
             echo "Timeout waiting for historico-service"
 
+            echo "========== HISTORICO LOGS =========="
             docker logs historico-service || true
 
             exit 1
           '
 
+      # ==========================================
       # VALIDATE CONTAINERS
+      # ==========================================
       - name: Validate containers
         run: |
+
           docker compose -f infra/docker-compose.yml ps
 
-          if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy"; then
+          if docker compose -f infra/docker-compose.yml ps \
+            | grep -E "Exit|Restarting|unhealthy"; then
 
             echo "One or more containers failed"
 
@@ -185,31 +206,45 @@ jobs:
             exit 1
           fi
 
-      # FINAL CONTAINER STATUS
+          echo "All containers are healthy!"
+
+      # ==========================================
+      # FINAL STATUS
+      # ==========================================
       - name: Final container status
         run: |
           docker compose -f infra/docker-compose.yml ps
 
+      # ==========================================
       # INSTALL K6
+      # ==========================================
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      # LOGIN TEST
+      # ==========================================
+      # LOGIN LOAD TEST
+      # ==========================================
       - name: Execute Login Load Test
         run: |
           k6 run infra/k6/login-test.js
 
+      # ==========================================
       # PRODUTO POST TEST
+      # ==========================================
       - name: Execute Produto POST Test
         run: |
           k6 run infra/k6/produto-post-test.js
 
+      # ==========================================
       # PRODUTO GET TEST
+      # ==========================================
       - name: Execute Produto GET Test
         run: |
           k6 run infra/k6/produto-get-test.js
 
-      # SHOW ALL LOGS
+      # ==========================================
+      # SHOW LOGS
+      # ==========================================
       - name: Show all logs
         if: always()
         run: |
@@ -226,7 +261,9 @@ jobs:
           echo "========== POSTGRES =========="
           docker logs postgres-db || true
 
+      # ==========================================
       # STOP CONTAINERS
+      # ==========================================
       - name: Stop containers
         if: always()
         run: |
