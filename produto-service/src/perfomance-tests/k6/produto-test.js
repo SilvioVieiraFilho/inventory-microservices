@@ -4,7 +4,6 @@ import { check, sleep } from 'k6';
 export const options = {
     vus: 20,
     duration: '30s',
-
     thresholds: {
         http_req_duration: ['p(95)<500'],
         http_req_failed: ['rate<0.01'],
@@ -12,45 +11,32 @@ export const options = {
 };
 
 const BASE_URL = 'http://localhost:8080';
-
-// 🔥 categoria vinda do CI
-const CATEGORY_ID = __ENV.CATEGORY_ID;
-
-// 🔥 validação crítica
-if (!CATEGORY_ID) {
-    throw new Error('CATEGORY_ID não definido no ambiente (CI)');
-}
+const CATEGORY_ID = Number(__ENV.CATEGORY_ID);
 
 export default function () {
+
+    if (!CATEGORY_ID || CATEGORY_ID <= 0) {
+        throw new Error("CATEGORY_ID inválido vindo do CI");
+    }
 
     const payload = JSON.stringify({
         nome: `Produto-${__VU}-${__ITER}`,
         quantidade: 10,
         preco: 199.90,
         status: 'ATIVO',
-        categoria_id: Number(CATEGORY_ID)
+        categoria_id: CATEGORY_ID
     });
 
-    const params = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
+    const res = http.post(`${BASE_URL}/produtos`, payload, {
+        headers: { 'Content-Type': 'application/json' }
+    });
 
-    const response = http.post(
-        `${BASE_URL}/produtos`,
-        payload,
-        params
-    );
+    console.log('STATUS:', res.status);
+    console.log('BODY:', res.body);
 
-    let body = {};
-    try {
-        body = response.json();
-    } catch (e) {}
-
-    check(response, {
+    check(res, {
         'status 201': (r) => r.status === 201,
-        'tempo resposta < 500ms': (r) => r.timings.duration < 500,
+        'tempo < 500ms': (r) => r.timings.duration < 500,
     });
 
     sleep(1);
