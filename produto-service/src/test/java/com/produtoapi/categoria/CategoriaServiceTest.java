@@ -45,7 +45,7 @@ class CategoriaServiceTest {
 
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNomeCategoria("Eletrônicos");
-            dto.setDecricaoCategoria("Produtos eletrônicos");
+            dto.setDescricaoCategoria("Produtos eletrônicos");
 
             Categoria categoriaSalva = Categoria.builder().id(1L).nomeCategoria("Eletrônicos").build();
 

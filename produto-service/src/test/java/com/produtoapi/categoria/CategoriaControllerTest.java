@@ -53,7 +53,7 @@ class CategoriaControllerTest {
 
             CategoriaRequestDTO request = new CategoriaRequestDTO();
             request.setNomeCategoria("Eletrônicos");
-            request.setDecricaoCategoria("Produtos eletrônicos");
+            request.setDescricaoCategoria("Produtos eletrônicos");
 
             CategoriaResponseDTO response = new CategoriaResponseDTO();
 
