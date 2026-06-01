@@ -13,7 +13,6 @@ on:
 jobs:
   integration-test:
     runs-on: ubuntu-latest
-
     timeout-minutes: 30
 
     steps:
@@ -34,7 +33,7 @@ jobs:
           cache: maven
 
       # =========================================================
-      # SHOW DOCKER VERSION
+      # DOCKER INFO
       # =========================================================
       - name: Docker info
         run: |
@@ -49,7 +48,7 @@ jobs:
           docker compose -f infra/docker-compose.yml up -d --build
 
       # =========================================================
-      # SHOW CONTAINER STATUS
+      # SHOW CONTAINERS
       # =========================================================
       - name: Show containers
         run: |
@@ -73,31 +72,20 @@ jobs:
       # =========================================================
       # WAIT KAFKA
       # =========================================================
-      - name: Wait Kafka broker
+      - name: Wait Kafka
         run: |
-          timeout 300 bash -c '
+          timeout 180 bash -c '
 
-            echo "Waiting Kafka startup..."
+            until docker exec kafka \
+              kafka-topics \
+              --bootstrap-server localhost:9092 \
+              --list > /dev/null 2>&1; do
 
-            for i in {1..50}; do
-
-              if docker exec kafka kafka-broker-api-versions.sh \
-                --bootstrap-server localhost:9092 > /dev/null 2>&1; then
-
-                echo "Kafka broker is ready!"
-                exit 0
-              fi
-
-              echo "Kafka not ready yet... ($i/50)"
+              echo "Waiting Kafka..."
               sleep 5
             done
 
-            echo "Kafka failed to start"
-
-            echo "========== KAFKA LOGS =========="
-            docker logs kafka || true
-
-            exit 1
+            echo "Kafka is ready!"
           '
 
       # =========================================================
@@ -110,7 +98,8 @@ jobs:
           docker exec postgres-db pg_isready -U postgres
 
           echo "Checking Kafka..."
-          docker exec kafka kafka-topics.sh \
+          docker exec kafka \
+            kafka-topics \
             --bootstrap-server localhost:9092 \
             --list
 
@@ -245,7 +234,7 @@ jobs:
           k6 run infra/k6/produto-get-test.js
 
       # =========================================================
-      # SHOW ALL LOGS
+      # SHOW LOGS
       # =========================================================
       - name: Show all logs
         if: always()
@@ -253,9 +242,6 @@ jobs:
 
           echo "========== POSTGRES =========="
           docker logs postgres-db || true
-
-          echo "========== ZOOKEEPER =========="
-          docker logs zookeeper || true
 
           echo "========== KAFKA =========="
           docker logs kafka || true
