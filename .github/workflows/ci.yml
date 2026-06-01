@@ -36,46 +36,138 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml ps
 
-      # WAIT POSTGRES
+      # WAIT POSTGRESQL
       - name: Wait PostgreSQL
         run: |
-          timeout 120 bash -c '
+          timeout 180 bash -c '
             until docker exec postgres-db pg_isready -U postgres; do
               echo "Waiting PostgreSQL..."
               sleep 5
             done
+
+            echo "PostgreSQL is ready!"
           '
 
       # WAIT KAFKA
       - name: Wait Kafka
         run: |
-          timeout 120 bash -c '
+          timeout 240 bash -c '
+
+            echo "Waiting Kafka process startup..."
+
             until docker logs kafka 2>&1 | grep -q "started (kafka.server.KafkaServer)"; do
               echo "Waiting Kafka..."
               sleep 5
             done
+
+            echo "Kafka process started"
+
+            echo "Waiting broker stabilization..."
+
+            for i in {1..40}; do
+
+              if docker exec kafka kafka-broker-api-versions.sh \
+                --bootstrap-server localhost:9092 &>/dev/null; then
+
+                echo "Kafka broker is ready!"
+                exit 0
+              fi
+
+              echo "Broker not ready yet... ($i/40)"
+              sleep 3
+            done
+
+            echo "Kafka broker failed to stabilize"
+            docker logs kafka
+
+            exit 1
           '
+
+      # VERIFY INFRASTRUCTURE
+      - name: Verify infrastructure readiness
+        run: |
+          echo "Checking PostgreSQL..."
+          docker exec postgres-db pg_isready -U postgres
+
+          echo "Checking Kafka..."
+          docker exec kafka kafka-topics.sh \
+            --list \
+            --bootstrap-server localhost:9092
+
+          echo "Infrastructure is ready!"
 
       # WAIT PRODUTO SERVICE
       - name: Wait for produto-service healthcheck
         run: |
-          timeout 180 bash -c '
-            until [ "$(docker inspect --format="{{.State.Health.Status}}" produto-service)" = "healthy" ]; do
-              status=$(docker inspect --format="{{.State.Health.Status}}" produto-service 2>/dev/null || echo "starting")
-              echo "produto-service status: $status"
+          timeout 300 bash -c '
+
+            for i in {1..60}; do
+
+              status=$(docker inspect \
+                --format="{{.State.Health.Status}}" \
+                produto-service 2>/dev/null || echo "starting")
+
+              echo "[$i/60] produto-service status: $status"
+
+              if [ "$status" = "healthy" ]; then
+                echo "produto-service is healthy!"
+                exit 0
+              fi
+
+              if [ "$status" = "unhealthy" ]; then
+                echo "produto-service became unhealthy"
+
+                echo "========== PRODUTO LOGS =========="
+                docker logs --tail 100 produto-service || true
+
+                exit 1
+              fi
+
               sleep 5
             done
+
+            echo "Timeout waiting for produto-service"
+
+            docker logs produto-service || true
+
+            exit 1
           '
 
       # WAIT HISTORICO SERVICE
       - name: Wait for historico-service healthcheck
         run: |
-          timeout 180 bash -c '
-            until [ "$(docker inspect --format="{{.State.Health.Status}}" historico-service)" = "healthy" ]; do
-              status=$(docker inspect --format="{{.State.Health.Status}}" historico-service 2>/dev/null || echo "starting")
-              echo "historico-service status: $status"
+          timeout 300 bash -c '
+
+            for i in {1..60}; do
+
+              status=$(docker inspect \
+                --format="{{.State.Health.Status}}" \
+                historico-service 2>/dev/null || echo "starting")
+
+              echo "[$i/60] historico-service status: $status"
+
+              if [ "$status" = "healthy" ]; then
+                echo "historico-service is healthy!"
+                exit 0
+              fi
+
+              if [ "$status" = "unhealthy" ]; then
+                echo "historico-service became unhealthy"
+
+                echo "========== HISTORICO LOGS =========="
+                docker logs --tail 100 historico-service || true
+
+                exit 1
+              fi
+
               sleep 5
             done
+
+            echo "Timeout waiting for historico-service"
+
+            docker logs historico-service || true
+
+            exit 1
           '
 
       # VALIDATE CONTAINERS
@@ -84,8 +176,10 @@ jobs:
           docker compose -f infra/docker-compose.yml ps
 
           if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting"; then
+
             echo "One or more containers failed"
 
+            echo "========== DOCKER COMPOSE LOGS =========="
             docker compose -f infra/docker-compose.yml logs
 
             exit 1
@@ -114,6 +208,7 @@ jobs:
       - name: Show all logs
         if: always()
         run: |
+
           echo "========== PRODUTO SERVICE =========="
           docker logs produto-service || true
 
