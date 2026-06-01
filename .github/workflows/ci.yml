@@ -134,8 +134,8 @@ jobs:
           RESPONSE=$(curl -s -X POST http://localhost:8080/categorias \
             -H "Content-Type: application/json" \
             -d '{
-              "nome": "Eletronicos",
-              "descricaoCategoria": "categoria teste carga"
+              "nome": "outra",
+              "descricaoCategoria": "teste"
             }')
 
           echo "RAW RESPONSE: $RESPONSE"
