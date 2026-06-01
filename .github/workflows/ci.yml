@@ -175,7 +175,7 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.yml ps
 
-          if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting"; then
+          if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy"; then
 
             echo "One or more containers failed"
 
@@ -184,6 +184,11 @@ jobs:
 
             exit 1
           fi
+
+      # FINAL CONTAINER STATUS
+      - name: Final container status
+        run: |
+          docker compose -f infra/docker-compose.yml ps
 
       # INSTALL K6
       - name: Install k6
@@ -225,4 +230,4 @@ jobs:
       - name: Stop containers
         if: always()
         run: |
-          docker compose -f infra/docker-compose.yml down -v
+          docker compose -f infra/docker-compose.yml down -v --remove-orphans

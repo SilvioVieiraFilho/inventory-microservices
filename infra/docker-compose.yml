@@ -40,13 +40,6 @@ services:
     networks:
       - backend-network
 
-    healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 20s
-
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
@@ -54,7 +47,7 @@ services:
 
     depends_on:
       zookeeper:
-        condition: service_healthy
+        condition: service_started
 
     ports:
       - "9092:9092"
