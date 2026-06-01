@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 public class CategoriaRequestDTO {
     private String nomeCategoria;
-    private String decricaoCategoria;
+    private String descricaoCategoria;
 
 
 }
