@@ -13,8 +13,13 @@ export const options = {
 
 const BASE_URL = 'http://localhost:8080';
 
-// 🔥 pega do CI
+// 🔥 categoria vinda do CI
 const CATEGORY_ID = __ENV.CATEGORY_ID;
+
+// 🔥 validação crítica
+if (!CATEGORY_ID) {
+    throw new Error('CATEGORY_ID não definido no ambiente (CI)');
+}
 
 export default function () {
 
@@ -23,8 +28,6 @@ export default function () {
         quantidade: 10,
         preco: 199.90,
         status: 'ATIVO',
-
-        // 🔥 AQUI está a correção
         categoria_id: Number(CATEGORY_ID)
     });
 
@@ -43,12 +46,7 @@ export default function () {
     let body = {};
     try {
         body = response.json();
-    } catch (e) {
-        console.log('Erro parsing JSON');
-    }
-
-    console.log('STATUS:', response.status);
-    console.log('BODY:', response.body);
+    } catch (e) {}
 
     check(response, {
         'status 201': (r) => r.status === 201,
