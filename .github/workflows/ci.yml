@@ -1,4 +1,4 @@
-name: CI Pipeline with Docker and k6
+name: CI Pipeline (Docker + k6)
 
 on:
   push:
@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    env:
+      BASE_URL: http://localhost:8080
+      CATEGORY_NAME: categoria-ci
+
     steps:
       # =========================================================
       # CHECKOUT
@@ -19,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
 
       # =========================================================
-      # JAVA 21
+      # JAVA
       # =========================================================
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -29,90 +33,74 @@ jobs:
           cache: maven
 
       # =========================================================
-      # START DOCKER
+      # START STACK
       # =========================================================
-      - name: Start containers
+      - name: Start Docker stack
         run: docker compose -f infra/docker-compose.yml up -d --build
 
       - name: Show containers
         run: docker compose -f infra/docker-compose.yml ps
 
       # =========================================================
-      # WAIT POSTGRES
+      # WAIT POSTGRES (robusto)
       # =========================================================
       - name: Wait PostgreSQL
         run: |
-          timeout 180 bash -c '
-          until docker exec postgres-db pg_isready -U postgres; do
+          for i in {1..30}; do
+            docker exec postgres-db pg_isready -U postgres && exit 0
             echo "Waiting PostgreSQL..."
             sleep 5
           done
-          '
+          docker logs postgres-db
+          exit 1
 
       # =========================================================
-      # WAIT KAFKA
+      # WAIT KAFKA (mais confiável)
       # =========================================================
       - name: Wait Kafka
         run: |
-          timeout 180 bash -c '
-          until docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+          for i in {1..30}; do
+            docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1 && exit 0
             echo "Waiting Kafka..."
             sleep 5
           done
-          '
+          docker logs kafka
+          exit 1
 
       # =========================================================
-      # VERIFY INFRA
+      # WAIT SERVICES (health check real)
       # =========================================================
-      - name: Verify infrastructure
+      - name: Wait services
         run: |
-          docker exec postgres-db pg_isready -U postgres
-          docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
-
-      # =========================================================
-      # WAIT SERVICES
-      # =========================================================
-      - name: Wait produto-service
-        run: |
-          timeout 300 bash -c '
           for i in {1..60}; do
-            STATUS=$(docker inspect --format="{{.State.Health.Status}}" produto-service 2>/dev/null || echo "starting")
-            echo "produto-service: $STATUS"
 
-            [ "$STATUS" = "healthy" ] && exit 0
+            PRODUTO=$(docker inspect -f '{{.State.Health.Status}}' produto-service 2>/dev/null || echo "starting")
+            HIST=$(docker inspect -f '{{.State.Health.Status}}' historico-service 2>/dev/null || echo "starting")
+
+            echo "produto-service: $PRODUTO | historico-service: $HIST"
+
+            if [ "$PRODUTO" = "healthy" ] && [ "$HIST" = "healthy" ]; then
+              exit 0
+            fi
+
             sleep 5
           done
 
           docker logs produto-service
-          exit 1
-          '
-
-      - name: Wait historico-service
-        run: |
-          timeout 300 bash -c '
-          for i in {1..60}; do
-            STATUS=$(docker inspect --format="{{.State.Health.Status}}" historico-service 2>/dev/null || echo "starting")
-            echo "historico-service: $STATUS"
-
-            [ "$STATUS" = "healthy" ] && exit 0
-            sleep 5
-          done
-
           docker logs historico-service
           exit 1
-          '
 
       # =========================================================
       # CREATE TEST USER
       # =========================================================
       - name: Create test user
         run: |
-          curl -s -X POST http://localhost:8080/auth/register \
+          curl -s -X POST $BASE_URL/auth/register \
             -H "Content-Type: application/json" \
-            -d '{"email":"silvio@email.com","senha":"123456"}'
+            -d '{"email":"ci@test.com","senha":"123456"}'
 
       # =========================================================
-      # INSTALL TOOLS
+      # K6 INSTALL
       # =========================================================
       - name: Install k6
         uses: grafana/setup-k6-action@v1
@@ -123,52 +111,45 @@ jobs:
       # =========================================================
       # LOGIN TEST
       # =========================================================
-      - name: Execute Login Load Test
+      - name: Login test (k6)
         run: k6 run infra/k6/login-test.js
 
       # =========================================================
-      # CREATE CATEGORY (ROBUSTO E SEGURO)
+      # CREATE CATEGORY (FIXADO E SEGURO)
       # =========================================================
-      - name: Create test category
+      - name: Create category
         run: |
-          RESPONSE=$(curl -s -X POST http://localhost:8080/categorias \
+          RESPONSE=$(curl -s -X POST $BASE_URL/categorias \
             -H "Content-Type: application/json" \
-            -d '{
-              "nome": "outra",
-              "descricaoCategoria": "teste"
-            }')
+            -d "{\"nome\":\"$CATEGORY_NAME\",\"descricaoCategoria\":\"ci test\"}")
 
-          echo "RAW RESPONSE: $RESPONSE"
+          echo "Response: $RESPONSE"
 
           CATEGORY_ID=$(echo "$RESPONSE" | jq -r '.id // .data.id // .categoriaId')
 
           if [ -z "$CATEGORY_ID" ] || [ "$CATEGORY_ID" = "null" ]; then
-            echo "❌ CATEGORY_ID inválido"
-            echo "$RESPONSE"
+            echo "CATEGORY ERROR"
             exit 1
           fi
 
           echo "CATEGORY_ID=$CATEGORY_ID" >> $GITHUB_ENV
 
-          # garante propagação antes do k6
-          sleep 5
-
       # =========================================================
       # PRODUCT TEST
       # =========================================================
-      - name: Execute Produto POST Test
+      - name: Produto POST test
         run: k6 run infra/k6/produto-test.js
         env:
           CATEGORY_ID: ${{ env.CATEGORY_ID }}
 
-      - name: Execute Produto GET Test
+      - name: Produto GET stress test
         run: k6 run infra/k6/stress-test.js
 
       # =========================================================
-      # LOGS
+      # LOGS ON FAIL
       # =========================================================
-      - name: Show logs
-        if: always()
+      - name: Dump logs (only on failure)
+        if: failure()
         run: |
           docker logs postgres-db || true
           docker logs kafka || true
@@ -178,6 +159,6 @@ jobs:
       # =========================================================
       # CLEANUP
       # =========================================================
-      - name: Stop containers
+      - name: Cleanup
         if: always()
-        run: docker compose -f infra/docker-compose.yml down -v --remove-orphans
+        run: docker compose -f infra/docker-compose.yml down -v
