@@ -121,7 +121,7 @@ jobs:
         run: |
           RESPONSE=$(curl -s -X POST $BASE_URL/categorias \
             -H "Content-Type: application/json" \
-            -d "{\"nome\":\"$CATEGORY_NAME\",\"descricaoCategoria\":\"ci test\"}")
+            -d "{\"nomeCategoria\":\"$CATEGORY_NAME\",\"descricaoCategoria\":\"ci test\"}")
 
           echo "Response: $RESPONSE"
 
