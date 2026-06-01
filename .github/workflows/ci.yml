@@ -193,17 +193,19 @@ jobs:
             }'
 
       # =========================================================
-      # INSTALL K6
+      # INSTALL K6 + JQ
       # =========================================================
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       # =========================================================
-      # LOGIN LOAD TEST
+      # LOGIN TEST
       # =========================================================
       - name: Execute Login Load Test
-        run: |
-          k6 run infra/k6/login-test.js
+        run: k6 run infra/k6/login-test.js
 
       # =========================================================
       # CREATE TEST CATEGORY
@@ -221,19 +223,21 @@ jobs:
 
           echo "CATEGORY RESPONSE: $RESPONSE"
 
+          CATEGORY_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          echo "CATEGORY_ID=$CATEGORY_ID" >> $GITHUB_ENV
+
       # =========================================================
       # PRODUTO POST TEST
       # =========================================================
       - name: Execute Produto POST Test
-        run: |
-          k6 run infra/k6/produto-test.js
+        run: k6 run infra/k6/produto-test.js
 
       # =========================================================
       # PRODUTO GET TEST
       # =========================================================
       - name: Execute Produto GET Test
-        run: |
-          k6 run infra/k6/stress-test.js
+        run: k6 run infra/k6/stress-test.js
 
       # =========================================================
       # SHOW LOGS
