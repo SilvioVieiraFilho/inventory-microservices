@@ -60,12 +60,10 @@ jobs:
       - name: Wait PostgreSQL
         run: |
           timeout 180 bash -c '
-
             until docker exec postgres-db pg_isready -U postgres; do
               echo "Waiting PostgreSQL..."
               sleep 5
             done
-
             echo "PostgreSQL is ready!"
           '
 
@@ -75,16 +73,13 @@ jobs:
       - name: Wait Kafka
         run: |
           timeout 180 bash -c '
-
             until docker exec kafka \
               kafka-topics \
               --bootstrap-server localhost:9092 \
               --list > /dev/null 2>&1; do
-
               echo "Waiting Kafka..."
               sleep 5
             done
-
             echo "Kafka is ready!"
           '
 
@@ -93,7 +88,6 @@ jobs:
       # =========================================================
       - name: Verify infrastructure
         run: |
-
           echo "Checking PostgreSQL..."
           docker exec postgres-db pg_isready -U postgres
 
@@ -111,9 +105,7 @@ jobs:
       - name: Wait produto-service
         run: |
           timeout 300 bash -c '
-
             for i in {1..60}; do
-
               STATUS=$(docker inspect \
                 --format="{{.State.Health.Status}}" \
                 produto-service 2>/dev/null || echo "starting")
@@ -126,12 +118,8 @@ jobs:
               fi
 
               if [ "$STATUS" = "unhealthy" ]; then
-
                 echo "produto-service became unhealthy"
-
-                echo "========== PRODUTO LOGS =========="
                 docker logs --tail 300 produto-service || true
-
                 exit 1
               fi
 
@@ -139,9 +127,7 @@ jobs:
             done
 
             echo "Timeout waiting produto-service"
-
             docker logs produto-service || true
-
             exit 1
           '
 
@@ -151,9 +137,7 @@ jobs:
       - name: Wait historico-service
         run: |
           timeout 300 bash -c '
-
             for i in {1..60}; do
-
               STATUS=$(docker inspect \
                 --format="{{.State.Health.Status}}" \
                 historico-service 2>/dev/null || echo "starting")
@@ -166,12 +150,8 @@ jobs:
               fi
 
               if [ "$STATUS" = "unhealthy" ]; then
-
                 echo "historico-service became unhealthy"
-
-                echo "========== HISTORICO LOGS =========="
                 docker logs --tail 300 historico-service || true
-
                 exit 1
               fi
 
@@ -179,9 +159,7 @@ jobs:
             done
 
             echo "Timeout waiting historico-service"
-
             docker logs historico-service || true
-
             exit 1
           '
 
@@ -190,17 +168,11 @@ jobs:
       # =========================================================
       - name: Validate containers
         run: |
-
           docker compose -f infra/docker-compose.yml ps
 
-          if docker compose -f infra/docker-compose.yml ps \
-            | grep -E "Exit|Restarting|unhealthy"; then
-
+          if docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy"; then
             echo "Some containers are failing"
-
-            echo "========== COMPOSE LOGS =========="
             docker compose -f infra/docker-compose.yml logs
-
             exit 1
           fi
 
@@ -211,7 +183,6 @@ jobs:
       # =========================================================
       - name: Create test user
         run: |
-
           sleep 10
 
           curl -X POST http://localhost:8080/auth/register \
@@ -235,6 +206,22 @@ jobs:
           k6 run infra/k6/login-test.js
 
       # =========================================================
+      # CREATE TEST CATEGORY
+      # =========================================================
+      - name: Create test category
+        run: |
+          sleep 10
+
+          RESPONSE=$(curl -s -X POST http://localhost:8080/categorias \
+            -H "Content-Type: application/json" \
+            -d '{
+              "nome": "Eletronicos",
+              "descricaoCategoria": "categoria criada para testes de carga"
+            }')
+
+          echo "CATEGORY RESPONSE: $RESPONSE"
+
+      # =========================================================
       # PRODUTO POST TEST
       # =========================================================
       - name: Execute Produto POST Test
@@ -254,7 +241,6 @@ jobs:
       - name: Show all logs
         if: always()
         run: |
-
           echo "========== POSTGRES =========="
           docker logs postgres-db || true
 
