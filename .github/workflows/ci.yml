@@ -14,39 +14,50 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
 
+    timeout-minutes: 30
+
     steps:
-      # ==========================================
+      # =========================================================
       # CHECKOUT
-      # ==========================================
+      # =========================================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ==========================================
-      # JAVA 21
-      # ==========================================
+      # =========================================================
+      # SETUP JAVA 21
+      # =========================================================
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
+          cache: maven
 
-      # ==========================================
+      # =========================================================
+      # SHOW DOCKER VERSION
+      # =========================================================
+      - name: Docker info
+        run: |
+          docker --version
+          docker compose version
+
+      # =========================================================
       # START CONTAINERS
-      # ==========================================
+      # =========================================================
       - name: Start containers
         run: |
           docker compose -f infra/docker-compose.yml up -d --build
 
-      # ==========================================
+      # =========================================================
       # SHOW CONTAINER STATUS
-      # ==========================================
+      # =========================================================
       - name: Show containers
         run: |
           docker compose -f infra/docker-compose.yml ps
 
-      # ==========================================
+      # =========================================================
       # WAIT POSTGRESQL
-      # ==========================================
+      # =========================================================
       - name: Wait PostgreSQL
         run: |
           timeout 180 bash -c '
@@ -59,78 +70,78 @@ jobs:
             echo "PostgreSQL is ready!"
           '
 
-      # ==========================================
+      # =========================================================
       # WAIT KAFKA
-      # ==========================================
-      - name: Wait Kafka
+      # =========================================================
+      - name: Wait Kafka broker
         run: |
-          timeout 240 bash -c '
+          timeout 300 bash -c '
 
-            echo "Waiting Kafka broker..."
+            echo "Waiting Kafka startup..."
 
-            for i in {1..40}; do
+            for i in {1..50}; do
 
-              if docker exec kafka kafka-broker-api-versions \
+              if docker exec kafka kafka-broker-api-versions.sh \
                 --bootstrap-server localhost:9092 > /dev/null 2>&1; then
 
                 echo "Kafka broker is ready!"
                 exit 0
               fi
 
-              echo "Kafka not ready yet... ($i/40)"
+              echo "Kafka not ready yet... ($i/50)"
               sleep 5
             done
 
-            echo "Kafka broker failed"
+            echo "Kafka failed to start"
 
             echo "========== KAFKA LOGS =========="
-            docker logs kafka
+            docker logs kafka || true
 
             exit 1
           '
 
-      # ==========================================
+      # =========================================================
       # VERIFY INFRASTRUCTURE
-      # ==========================================
-      - name: Verify infrastructure readiness
+      # =========================================================
+      - name: Verify infrastructure
         run: |
 
           echo "Checking PostgreSQL..."
           docker exec postgres-db pg_isready -U postgres
 
           echo "Checking Kafka..."
-          docker exec kafka kafka-topics \
-            --list \
-            --bootstrap-server localhost:9092
+          docker exec kafka kafka-topics.sh \
+            --bootstrap-server localhost:9092 \
+            --list
 
           echo "Infrastructure is ready!"
 
-      # ==========================================
+      # =========================================================
       # WAIT PRODUTO SERVICE
-      # ==========================================
+      # =========================================================
       - name: Wait produto-service
         run: |
           timeout 300 bash -c '
 
             for i in {1..60}; do
 
-              status=$(docker inspect \
+              STATUS=$(docker inspect \
                 --format="{{.State.Health.Status}}" \
                 produto-service 2>/dev/null || echo "starting")
 
-              echo "[$i/60] produto-service status: $status"
+              echo "[$i/60] produto-service: $STATUS"
 
-              if [ "$status" = "healthy" ]; then
+              if [ "$STATUS" = "healthy" ]; then
                 echo "produto-service is healthy!"
                 exit 0
               fi
 
-              if [ "$status" = "unhealthy" ]; then
+              if [ "$STATUS" = "unhealthy" ]; then
 
                 echo "produto-service became unhealthy"
 
                 echo "========== PRODUTO LOGS =========="
-                docker logs --tail 200 produto-service || true
+                docker logs --tail 300 produto-service || true
 
                 exit 1
               fi
@@ -138,40 +149,39 @@ jobs:
               sleep 5
             done
 
-            echo "Timeout waiting for produto-service"
+            echo "Timeout waiting produto-service"
 
-            echo "========== PRODUTO LOGS =========="
             docker logs produto-service || true
 
             exit 1
           '
 
-      # ==========================================
+      # =========================================================
       # WAIT HISTORICO SERVICE
-      # ==========================================
+      # =========================================================
       - name: Wait historico-service
         run: |
           timeout 300 bash -c '
 
             for i in {1..60}; do
 
-              status=$(docker inspect \
+              STATUS=$(docker inspect \
                 --format="{{.State.Health.Status}}" \
                 historico-service 2>/dev/null || echo "starting")
 
-              echo "[$i/60] historico-service status: $status"
+              echo "[$i/60] historico-service: $STATUS"
 
-              if [ "$status" = "healthy" ]; then
+              if [ "$STATUS" = "healthy" ]; then
                 echo "historico-service is healthy!"
                 exit 0
               fi
 
-              if [ "$status" = "unhealthy" ]; then
+              if [ "$STATUS" = "unhealthy" ]; then
 
                 echo "historico-service became unhealthy"
 
                 echo "========== HISTORICO LOGS =========="
-                docker logs --tail 200 historico-service || true
+                docker logs --tail 300 historico-service || true
 
                 exit 1
               fi
@@ -179,17 +189,16 @@ jobs:
               sleep 5
             done
 
-            echo "Timeout waiting for historico-service"
+            echo "Timeout waiting historico-service"
 
-            echo "========== HISTORICO LOGS =========="
             docker logs historico-service || true
 
             exit 1
           '
 
-      # ==========================================
+      # =========================================================
       # VALIDATE CONTAINERS
-      # ==========================================
+      # =========================================================
       - name: Validate containers
         run: |
 
@@ -198,9 +207,9 @@ jobs:
           if docker compose -f infra/docker-compose.yml ps \
             | grep -E "Exit|Restarting|unhealthy"; then
 
-            echo "One or more containers failed"
+            echo "Some containers are failing"
 
-            echo "========== DOCKER COMPOSE LOGS =========="
+            echo "========== COMPOSE LOGS =========="
             docker compose -f infra/docker-compose.yml logs
 
             exit 1
@@ -208,46 +217,48 @@ jobs:
 
           echo "All containers are healthy!"
 
-      # ==========================================
-      # FINAL STATUS
-      # ==========================================
-      - name: Final container status
-        run: |
-          docker compose -f infra/docker-compose.yml ps
-
-      # ==========================================
+      # =========================================================
       # INSTALL K6
-      # ==========================================
+      # =========================================================
       - name: Install k6
         uses: grafana/setup-k6-action@v1
 
-      # ==========================================
+      # =========================================================
       # LOGIN LOAD TEST
-      # ==========================================
+      # =========================================================
       - name: Execute Login Load Test
         run: |
           k6 run infra/k6/login-test.js
 
-      # ==========================================
+      # =========================================================
       # PRODUTO POST TEST
-      # ==========================================
+      # =========================================================
       - name: Execute Produto POST Test
         run: |
           k6 run infra/k6/produto-post-test.js
 
-      # ==========================================
+      # =========================================================
       # PRODUTO GET TEST
-      # ==========================================
+      # =========================================================
       - name: Execute Produto GET Test
         run: |
           k6 run infra/k6/produto-get-test.js
 
-      # ==========================================
-      # SHOW LOGS
-      # ==========================================
+      # =========================================================
+      # SHOW ALL LOGS
+      # =========================================================
       - name: Show all logs
         if: always()
         run: |
+
+          echo "========== POSTGRES =========="
+          docker logs postgres-db || true
+
+          echo "========== ZOOKEEPER =========="
+          docker logs zookeeper || true
+
+          echo "========== KAFKA =========="
+          docker logs kafka || true
 
           echo "========== PRODUTO SERVICE =========="
           docker logs produto-service || true
@@ -255,15 +266,17 @@ jobs:
           echo "========== HISTORICO SERVICE =========="
           docker logs historico-service || true
 
-          echo "========== KAFKA =========="
-          docker logs kafka || true
+      # =========================================================
+      # FINAL STATUS
+      # =========================================================
+      - name: Final status
+        if: always()
+        run: |
+          docker compose -f infra/docker-compose.yml ps
 
-          echo "========== POSTGRES =========="
-          docker logs postgres-db || true
-
-      # ==========================================
+      # =========================================================
       # STOP CONTAINERS
-      # ==========================================
+      # =========================================================
       - name: Stop containers
         if: always()
         run: |
