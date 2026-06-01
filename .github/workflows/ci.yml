@@ -207,6 +207,22 @@ jobs:
           echo "All containers are healthy!"
 
       # =========================================================
+      # CREATE TEST USER
+      # =========================================================
+      - name: Create test user
+        run: |
+
+          sleep 10
+
+          curl -X POST http://localhost:8080/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{
+              "nome":"Admin",
+              "email":"admin@email.com",
+              "senha":"123456"
+            }'
+
+      # =========================================================
       # INSTALL K6
       # =========================================================
       - name: Install k6
