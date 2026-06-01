@@ -26,7 +26,7 @@ public class CategoriaService {
 
         Categoria categoria = Categoria.builder()
                 .nomeCategoria(dto.getNomeCategoria())
-                .decricaoCategoria(dto.getDecricaoCategoria())
+                .decricaoCategoria(dto.getDescricaoCategoria())
                 .dataDeCriacao(LocalDateTime.now())
                 .statusCategoria(StatusCategoria.ATIVO)
                 .build();
