@@ -2,13 +2,9 @@ name: CI Pipeline with Docker and k6
 
 on:
   push:
-    branches:
-      - main
-      - develop
-
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   integration-test:
@@ -23,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       # =========================================================
-      # SETUP JAVA 21
+      # JAVA 21
       # =========================================================
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -33,38 +29,24 @@ jobs:
           cache: maven
 
       # =========================================================
-      # DOCKER INFO
-      # =========================================================
-      - name: Docker info
-        run: |
-          docker --version
-          docker compose version
-
-      # =========================================================
-      # START CONTAINERS
+      # START DOCKER
       # =========================================================
       - name: Start containers
-        run: |
-          docker compose -f infra/docker-compose.yml up -d --build
+        run: docker compose -f infra/docker-compose.yml up -d --build
 
-      # =========================================================
-      # SHOW CONTAINERS
-      # =========================================================
       - name: Show containers
-        run: |
-          docker compose -f infra/docker-compose.yml ps
+        run: docker compose -f infra/docker-compose.yml ps
 
       # =========================================================
-      # WAIT POSTGRESQL
+      # WAIT POSTGRES
       # =========================================================
       - name: Wait PostgreSQL
         run: |
           timeout 180 bash -c '
-            until docker exec postgres-db pg_isready -U postgres; do
-              echo "Waiting PostgreSQL..."
-              sleep 5
-            done
-            echo "PostgreSQL is ready!"
+          until docker exec postgres-db pg_isready -U postgres; do
+            echo "Waiting PostgreSQL..."
+            sleep 5
+          done
           '
 
       # =========================================================
@@ -73,103 +55,64 @@ jobs:
       - name: Wait Kafka
         run: |
           timeout 180 bash -c '
-            until docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
-              echo "Waiting Kafka..."
-              sleep 5
-            done
-            echo "Kafka is ready!"
+          until docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1; do
+            echo "Waiting Kafka..."
+            sleep 5
+          done
           '
 
       # =========================================================
-      # VERIFY INFRASTRUCTURE
+      # VERIFY INFRA
       # =========================================================
       - name: Verify infrastructure
         run: |
-          echo "Checking PostgreSQL..."
           docker exec postgres-db pg_isready -U postgres
-
-          echo "Checking Kafka..."
           docker exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 
       # =========================================================
-      # WAIT PRODUTO SERVICE
+      # WAIT SERVICES
       # =========================================================
       - name: Wait produto-service
         run: |
           timeout 300 bash -c '
-            for i in {1..60}; do
-              STATUS=$(docker inspect --format="{{.State.Health.Status}}" produto-service 2>/dev/null || echo "starting")
+          for i in {1..60}; do
+            STATUS=$(docker inspect --format="{{.State.Health.Status}}" produto-service 2>/dev/null || echo "starting")
+            echo "produto-service: $STATUS"
 
-              echo "[$i/60] produto-service: $STATUS"
+            [ "$STATUS" = "healthy" ] && exit 0
+            sleep 5
+          done
 
-              if [ "$STATUS" = "healthy" ]; then
-                exit 0
-              fi
-
-              if [ "$STATUS" = "unhealthy" ]; then
-                docker logs --tail 300 produto-service
-                exit 1
-              fi
-
-              sleep 5
-            done
-
-            docker logs produto-service
-            exit 1
+          docker logs produto-service
+          exit 1
           '
 
-      # =========================================================
-      # WAIT HISTORICO SERVICE
-      # =========================================================
       - name: Wait historico-service
         run: |
           timeout 300 bash -c '
-            for i in {1..60}; do
-              STATUS=$(docker inspect --format="{{.State.Health.Status}}" historico-service 2>/dev/null || echo "starting")
+          for i in {1..60}; do
+            STATUS=$(docker inspect --format="{{.State.Health.Status}}" historico-service 2>/dev/null || echo "starting")
+            echo "historico-service: $STATUS"
 
-              echo "[$i/60] historico-service: $STATUS"
+            [ "$STATUS" = "healthy" ] && exit 0
+            sleep 5
+          done
 
-              if [ "$STATUS" = "healthy" ]; then
-                exit 0
-              fi
-
-              if [ "$STATUS" = "unhealthy" ]; then
-                docker logs --tail 300 historico-service
-                exit 1
-              fi
-
-              sleep 5
-            done
-
-            docker logs historico-service
-            exit 1
+          docker logs historico-service
+          exit 1
           '
-
-      # =========================================================
-      # VALIDATE CONTAINERS
-      # =========================================================
-      - name: Validate containers
-        run: |
-          docker compose -f infra/docker-compose.yml ps
-
-          docker compose -f infra/docker-compose.yml ps | grep -E "Exit|Restarting|unhealthy" && exit 1 || echo "OK"
 
       # =========================================================
       # CREATE TEST USER
       # =========================================================
       - name: Create test user
         run: |
-          sleep 10
-
           curl -s -X POST http://localhost:8080/auth/register \
             -H "Content-Type: application/json" \
-            -d '{
-              "email":"silvio@email.com",
-              "senha":"123456"
-            }'
+            -d '{"email":"silvio@email.com","senha":"123456"}'
 
       # =========================================================
-      # INSTALL K6 + JQ
+      # INSTALL TOOLS
       # =========================================================
       - name: Install k6
         uses: grafana/setup-k6-action@v1
@@ -184,12 +127,10 @@ jobs:
         run: k6 run infra/k6/login-test.js
 
       # =========================================================
-      # CREATE CATEGORY (FIX CRÍTICO)
+      # CREATE CATEGORY (ROBUSTO E SEGURO)
       # =========================================================
       - name: Create test category
         run: |
-          sleep 10
-
           RESPONSE=$(curl -s -X POST http://localhost:8080/categorias \
             -H "Content-Type: application/json" \
             -d '{
@@ -197,30 +138,36 @@ jobs:
               "descricaoCategoria": "categoria teste carga"
             }')
 
-          echo "CATEGORY RESPONSE: $RESPONSE"
+          echo "RAW RESPONSE: $RESPONSE"
 
-          CATEGORY_ID=$(echo "$RESPONSE" | jq -r '.id')
+          CATEGORY_ID=$(echo "$RESPONSE" | jq -r '.id // .data.id // .categoriaId')
+
+          if [ -z "$CATEGORY_ID" ] || [ "$CATEGORY_ID" = "null" ]; then
+            echo "❌ CATEGORY_ID inválido"
+            echo "$RESPONSE"
+            exit 1
+          fi
 
           echo "CATEGORY_ID=$CATEGORY_ID" >> $GITHUB_ENV
 
+          # garante propagação antes do k6
+          sleep 5
+
       # =========================================================
-      # PRODUTO POST TEST
+      # PRODUCT TEST
       # =========================================================
       - name: Execute Produto POST Test
         run: k6 run infra/k6/produto-test.js
         env:
           CATEGORY_ID: ${{ env.CATEGORY_ID }}
 
-      # =========================================================
-      # PRODUTO GET TEST
-      # =========================================================
       - name: Execute Produto GET Test
         run: k6 run infra/k6/stress-test.js
 
       # =========================================================
-      # SHOW LOGS
+      # LOGS
       # =========================================================
-      - name: Show all logs
+      - name: Show logs
         if: always()
         run: |
           docker logs postgres-db || true
@@ -229,17 +176,8 @@ jobs:
           docker logs historico-service || true
 
       # =========================================================
-      # FINAL STATUS
-      # =========================================================
-      - name: Final status
-        if: always()
-        run: |
-          docker compose -f infra/docker-compose.yml ps
-
-      # =========================================================
-      # STOP CONTAINERS
+      # CLEANUP
       # =========================================================
       - name: Stop containers
         if: always()
-        run: |
-          docker compose -f infra/docker-compose.yml down -v --remove-orphans
+        run: docker compose -f infra/docker-compose.yml down -v --remove-orphans
